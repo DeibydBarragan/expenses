@@ -3,8 +3,10 @@ import { Card } from "@heroui/react";
 import { CategoryChart } from "@/components/category-chart";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
+import { StreakCard } from "@/components/streak-card";
 import { formatMoney } from "@/lib/currency";
-import { getCategories, getMonthExpenses, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
+import { getCategories, getCoveredDates, getMonthExpenses, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
+import { computeStreak } from "@/lib/streak";
 import { getDictionary } from "@/lib/i18n/server";
 
 export default async function InicioPage() {
@@ -15,14 +17,16 @@ export default async function InicioPage() {
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
   const now = new Date();
-  const [monthExpenses, recent, categories] = await Promise.all([
+  const [monthExpenses, recent, categories, covered] = await Promise.all([
     getMonthExpenses(now.getFullYear(), now.getMonth() + 1),
     getRecentExpenses(5),
     getCategories(),
+    getCoveredDates(),
   ]);
+  const todayStr = now.toISOString().slice(0, 10);
+  const streak = computeStreak(covered, todayStr);
 
   const totalMes = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const todayStr = now.toISOString().slice(0, 10);
   const totalHoy = monthExpenses
     .filter((e) => e.date === todayStr)
     .reduce((s, e) => s + Number(e.amount), 0);
@@ -68,6 +72,8 @@ export default async function InicioPage() {
       </section>
 
       <ExpenseForm categories={categories} currency={currency} />
+
+      <StreakCard streak={streak} t={t} />
 
       <CategoryChart
         title={t.home.top}

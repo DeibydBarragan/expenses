@@ -45,3 +45,16 @@ export async function getMonthExpenses(year: number, month: number): Promise<Exp
     .order("date", { ascending: false });
   return (data ?? []) as unknown as Expense[];
 }
+
+/** Fechas cubiertas para la racha: días con gastos + días marcados "sin gastos". */
+export async function getCoveredDates(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const [exp, marks] = await Promise.all([
+    supabase.from("expenses").select("date"),
+    supabase.from("day_marks").select("date"),
+  ]);
+  const set = new Set<string>();
+  for (const r of (exp.data ?? []) as { date: string }[]) set.add(r.date);
+  for (const r of (marks.data ?? []) as { date: string }[]) set.add(r.date);
+  return set;
+}

@@ -34,10 +34,22 @@ create table if not exists public.expenses (
 create index if not exists expenses_user_date_idx on public.expenses(user_id, date desc);
 create index if not exists expenses_user_cat_idx on public.expenses(user_id, category_id);
 
+-- 3b. Días marcados como "sin gastos" (para la racha diaria)
+create table if not exists public.day_marks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  date date not null default current_date,
+  created_at timestamptz default now(),
+  unique(user_id, date)
+);
+
+create index if not exists day_marks_user_date_idx on public.day_marks(user_id, date desc);
+
 -- 4. RLS
 alter table public.profiles enable row level security;
 alter table public.categories enable row level security;
 alter table public.expenses enable row level security;
+alter table public.day_marks enable row level security;
 
 drop policy if exists "own profile" on public.profiles;
 create policy "own profile" on public.profiles
@@ -49,6 +61,10 @@ create policy "own categories" on public.categories
 
 drop policy if exists "own expenses" on public.expenses;
 create policy "own expenses" on public.expenses
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "own day marks" on public.day_marks;
+create policy "own day marks" on public.day_marks
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- 5. Crear perfil + categorías por defecto al registrarse

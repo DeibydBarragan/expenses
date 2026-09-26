@@ -1,82 +1,21 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-calm-bg: #faf9f7;
-  --color-calm-card: #ffffff;
-  --color-calm-ink: #1c1917;
-  --color-calm-muted: #78716c;
-  --color-calm-line: #e7e5e4;
-  --color-sage: #5f6f5a;
-  --color-sage-soft: #eef1ec;
+}
+
+/* Tema tranquilo: fondo cálido + acento salvia */
+:root {
+  --background: #faf9f7;
+  --accent: #5f6f5a;
+  --accent-foreground: #ffffff;
+  --radius: 0.9rem;
 }
 
 body {
-  background: var(--color-calm-bg);
-  color: var(--color-calm-ink);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-}
-
-.card {
-  background: var(--color-calm-card);
-  border: 1px solid var(--color-calm-line);
-  border-radius: 1.25rem;
-  box-shadow: 0 1px 2px rgb(28 25 23 / 0.04);
-}
-
-.input {
-  width: 100%;
-  border: 1px solid var(--color-calm-line);
-  border-radius: 0.9rem;
-  padding: 0.65rem 0.9rem;
-  font-size: 0.95rem;
-  background: #fff;
-  outline: none;
-}
-.input:focus {
-  border-color: var(--color-sage);
-  box-shadow: 0 0 0 3px rgb(95 111 90 / 0.12);
-}
-
-.btn-primary {
-  width: 100%;
-  background: var(--color-calm-ink);
-  color: #fff;
-  border-radius: 0.9rem;
-  padding: 0.7rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: opacity 0.15s;
-}
-.btn-primary:hover {
-  opacity: 0.88;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-}
-
-.btn-ghost {
-  width: 100%;
-  border: 1px solid var(--color-calm-line);
-  background: #fff;
-  border-radius: 0.9rem;
-  padding: 0.7rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-.btn-ghost:hover {
-  background: #f5f5f4;
-}
-
-.label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-calm-muted);
-  margin-bottom: 0.35rem;
-  display: block;
 }

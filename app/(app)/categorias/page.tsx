@@ -11,7 +11,7 @@ export default async function CategoriasPage() {
     <>
       <section>
         <h1 className="text-2xl font-semibold tracking-tight">Categorías</h1>
-        <p className="text-sm text-stone-500 mt-1">Solo las que usas. Sin complicaciones.</p>
+        <p className="mt-1 text-sm text-muted">Solo las que usas. Sin complicaciones.</p>
       </section>
       <CategoryManager categories={categories} />
     </>

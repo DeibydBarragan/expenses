@@ -1,16 +1,23 @@
-import Link from "next/link";
+import { Card, Link as HeroLink } from "@heroui/react";
 import { RegisterForm } from "@/components/auth-form";
 
 export default function RegistroPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center px-6 py-10">
+    <main className="flex min-h-screen items-center justify-center px-6 py-10">
       <div className="w-full max-w-sm">
-        <p className="text-xs tracking-[0.2em] uppercase text-stone-400 mb-2">expenses</p>
+        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-muted">expenses</p>
         <h1 className="text-2xl font-semibold tracking-tight">Crea tu cuenta</h1>
-        <p className="text-sm text-stone-500 mt-1 mb-6">Empieza a registrar en menos de un minuto.</p>
-        <RegisterForm />
-        <p className="mt-6 text-sm text-stone-500 text-center">
-          ¿Ya tienes cuenta? <Link href="/login" className="text-stone-900 underline underline-offset-4">Entrar</Link>
+        <p className="mb-6 mt-1 text-sm text-muted">Empieza a registrar en menos de un minuto.</p>
+        <Card>
+          <Card.Content className="flex flex-col gap-4 p-5">
+            <RegisterForm />
+          </Card.Content>
+        </Card>
+        <p className="mt-6 text-center text-sm text-muted">
+          ¿Ya tienes cuenta?{" "}
+          <HeroLink href="/login" className="text-sm">
+            Entrar
+          </HeroLink>
         </p>
       </div>
     </main>

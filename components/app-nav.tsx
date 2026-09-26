@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, Tabs } from "@heroui/react";
 
 const LINKS = [
   { href: "/inicio", label: "Inicio" },
@@ -12,33 +12,30 @@ const LINKS = [
 
 export function AppNav({ name, onSignOut }: { name?: string | null; onSignOut: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+
   return (
-    <header className="sticky top-0 z-10 backdrop-blur bg-[#FAF9F7]/85 border-b border-stone-200">
-      <div className="mx-auto max-w-xl px-5 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
+      <div className="mx-auto flex max-w-xl items-center justify-between px-5 py-3">
         <span className="text-sm font-semibold tracking-tight">expenses</span>
         <div className="flex items-center gap-3">
-          <span className="hidden sm:block text-xs text-stone-500 max-w-[120px] truncate">{name}</span>
-          <button onClick={() => onSignOut()} className="text-xs text-stone-500 hover:text-stone-900 underline underline-offset-4">
+          <span className="hidden max-w-[120px] truncate text-xs text-muted sm:block">{name}</span>
+          <Button variant="ghost" size="sm" onPress={() => onSignOut()}>
             Salir
-          </button>
+          </Button>
         </div>
       </div>
-      <nav className="mx-auto max-w-xl px-5 pb-3 flex gap-2">
-        {LINKS.map((l) => {
-          const active = pathname === l.href || pathname.startsWith(l.href + "/");
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`text-sm px-3.5 py-1.5 rounded-full transition ${
-                active ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-200/60 hover:text-stone-900"
-              }`}
-            >
-              {l.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="mx-auto max-w-xl px-5 pb-3">
+        <Tabs selectedKey={pathname} onSelectionChange={(key) => router.push(String(key))}>
+          <Tabs.List aria-label="Navegación">
+            {LINKS.map((l) => (
+              <Tabs.Tab key={l.href} id={l.href}>
+                {l.label}
+              </Tabs.Tab>
+            ))}
+          </Tabs.List>
+        </Tabs>
+      </div>
     </header>
   );
 }

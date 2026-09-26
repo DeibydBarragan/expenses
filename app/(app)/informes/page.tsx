@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { Card, Chip, ProgressBar } from "@heroui/react";
+import { MonthPager } from "@/components/month-pager";
 import { formatMoney } from "@/lib/currency";
 import { getMonthExpenses, getProfile, getSession } from "@/lib/queries";
 
@@ -48,52 +50,65 @@ export default async function InformesPage({
   return (
     <>
       <section className="flex items-center justify-between">
-        <a href={`/informes?y=${prev.y}&m=${prev.m}`} className="text-sm text-stone-500 hover:text-stone-900 px-2 py-1">←</a>
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight capitalize">{monthLabel(year, month)}</h1>
-          <p className="text-sm text-stone-500">{count} gastos</p>
-        </div>
-        <a href={`/informes?y=${next.y}&m=${next.m}`} className="text-sm text-stone-500 hover:text-stone-900 px-2 py-1">→</a>
+        <MonthPager prevHref={`/informes?y=${prev.y}&m=${prev.m}`} nextHref={`/informes?y=${next.y}&m=${next.m}`}>
+          <div className="text-center">
+            <h1 className="text-2xl font-semibold capitalize tracking-tight">{monthLabel(year, month)}</h1>
+            <p className="text-sm text-muted">{count} gastos</p>
+          </div>
+        </MonthPager>
       </section>
 
       <section className="grid grid-cols-3 gap-3">
-        <div className="card p-4">
-          <p className="text-xs text-stone-500">Total</p>
-          <p className="font-semibold tabular-nums mt-1">{formatMoney(total, currency)}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-stone-500">Nº gastos</p>
-          <p className="font-semibold tabular-nums mt-1">{count}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-stone-500">Promedio</p>
-          <p className="font-semibold tabular-nums mt-1">{formatMoney(avg, currency)}</p>
-        </div>
+        <Card>
+          <Card.Content className="p-4">
+            <p className="text-xs text-muted">Total</p>
+            <p className="mt-1 font-semibold tabular-nums">{formatMoney(total, currency)}</p>
+          </Card.Content>
+        </Card>
+        <Card>
+          <Card.Content className="p-4">
+            <p className="text-xs text-muted">Nº gastos</p>
+            <p className="mt-1 font-semibold tabular-nums">{count}</p>
+          </Card.Content>
+        </Card>
+        <Card>
+          <Card.Content className="p-4">
+            <p className="text-xs text-muted">Promedio</p>
+            <p className="mt-1 font-semibold tabular-nums">{formatMoney(avg, currency)}</p>
+          </Card.Content>
+        </Card>
       </section>
 
-      <section className="card p-5">
-        <h2 className="text-sm font-medium text-stone-500 mb-4">Por categoría</h2>
-        {rows.length === 0 ? (
-          <p className="text-sm text-stone-400">Sin gastos este mes.</p>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {rows.map((c) => {
+      <Card>
+        <Card.Content className="flex flex-col gap-4 p-5">
+          <h2 className="text-sm font-medium text-muted">Por categoría</h2>
+          {rows.length === 0 ? (
+            <p className="text-sm text-muted">Sin gastos este mes.</p>
+          ) : (
+            rows.map((c) => {
               const pct = total ? Math.round((c.total / total) * 100) : 0;
               return (
                 <div key={c.name}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>{c.icon} {c.name} <span className="text-stone-400">· {c.n}</span></span>
-                    <span className="font-medium tabular-nums">{formatMoney(c.total, currency)} <span className="text-stone-400 font-normal">{pct}%</span></span>
+                  <div className="mb-1 flex justify-between text-sm">
+                    <span>
+                      {c.icon} {c.name} <Chip size="sm">{c.n}</Chip>
+                    </span>
+                    <span className="font-medium tabular-nums">
+                      {formatMoney(c.total, currency)}{" "}
+                      <span className="font-normal text-muted">{pct}%</span>
+                    </span>
                   </div>
-                  <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: c.color }} />
-                  </div>
+                  <ProgressBar value={pct} minValue={0} maxValue={100} aria-label={c.name}>
+                    <ProgressBar.Track>
+                      <ProgressBar.Fill style={{ width: `${pct}%`, background: c.color }} />
+                    </ProgressBar.Track>
+                  </ProgressBar>
                 </div>
               );
-            })}
-          </div>
-        )}
-      </section>
+            })
+          )}
+        </Card.Content>
+      </Card>
     </>
   );
 }

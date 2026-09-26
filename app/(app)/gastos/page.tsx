@@ -13,7 +13,7 @@ export default async function GastosPage() {
     <>
       <section>
         <h1 className="text-2xl font-semibold tracking-tight">Gastos</h1>
-        <p className="text-sm text-stone-500 mt-1">Todo lo que has registrado, lo más nuevo primero.</p>
+        <p className="mt-1 text-sm text-muted">Todo lo que has registrado, lo más nuevo primero.</p>
       </section>
       <ExpenseForm categories={categories} />
       <ExpenseList expenses={expenses} currency={profile?.currency ?? "COP"} />

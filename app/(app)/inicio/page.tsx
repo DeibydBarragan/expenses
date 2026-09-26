@@ -1,14 +1,17 @@
 import { redirect } from "next/navigation";
-import { Card, ProgressBar } from "@heroui/react";
+import { Card } from "@heroui/react";
+import { CategoryChart } from "@/components/category-chart";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { formatMoney } from "@/lib/currency";
 import { getCategories, getMonthExpenses, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
+import { getDictionary } from "@/lib/i18n/server";
 
 export default async function InicioPage() {
   const { user } = await getSession();
   if (!user) redirect("/login");
 
+  const { lang, t } = await getDictionary();
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
   const now = new Date();
@@ -24,72 +27,62 @@ export default async function InicioPage() {
     .filter((e) => e.date === todayStr)
     .reduce((s, e) => s + Number(e.amount), 0);
 
-  const byCat = new Map<string, { name: string; color: string; total: number }>();
+  const byCat = new Map<string, { name: string; color: string; total: number; n: number }>();
   for (const e of monthExpenses) {
-    const key = e.categories?.name ?? "Otros";
-    const prev = byCat.get(key) ?? { name: key, color: e.categories?.color ?? "#A8A29E", total: 0 };
+    const key = e.categories?.name ?? t.list.uncategorized;
+    const prev = byCat.get(key) ?? { name: key, color: e.categories?.color ?? "#64748B", total: 0, n: 0 };
     prev.total += Number(e.amount);
+    prev.n += 1;
     byCat.set(key, prev);
   }
   const top = [...byCat.values()].sort((a, b) => b.total - a.total).slice(0, 3);
-  const monthName = now.toLocaleDateString("es", { month: "long" });
+  const monthName = now.toLocaleDateString(lang === "en" ? "en" : "es", { month: "long" });
 
   return (
     <>
       <section>
-        <p className="text-sm text-muted">Hola{profile?.name ? `, ${profile.name}` : ""} 👋</p>
-        <h1 className="text-2xl font-semibold capitalize tracking-tight">{monthName}</h1>
+        <p className="text-sm text-muted">
+          {t.home.hello}
+          {profile?.name ? `, ${profile.name}` : ""} 👋
+        </p>
+        <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">{monthName}</h1>
       </section>
 
       <section className="grid grid-cols-2 gap-3">
         <Card>
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">Este mes</p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(totalMes, currency)}</p>
+            <p className="text-xs text-muted">{t.home.thisMonth}</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums">
+              {formatMoney(totalMes, currency, lang)}
+            </p>
           </Card.Content>
         </Card>
         <Card>
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">Hoy</p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">{formatMoney(totalHoy, currency)}</p>
+            <p className="text-xs text-muted">{t.home.today}</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums">
+              {formatMoney(totalHoy, currency, lang)}
+            </p>
           </Card.Content>
         </Card>
       </section>
 
-      <ExpenseForm categories={categories} />
+      <ExpenseForm categories={categories} currency={currency} />
 
-      <Card>
-        <Card.Content className="flex flex-col gap-4 p-5">
-          <h2 className="text-sm font-medium text-muted">Top categorías del mes</h2>
-          {top.length === 0 ? (
-            <p className="text-sm text-muted">Aún no hay gastos este mes.</p>
-          ) : (
-            top.map((c) => {
-              const pct = totalMes ? Math.round((c.total / totalMes) * 100) : 0;
-              return (
-                <div key={c.name}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
-                      {c.name}
-                    </span>
-                    <span className="font-medium tabular-nums">{formatMoney(c.total, currency)}</span>
-                  </div>
-                  <ProgressBar value={pct} minValue={0} maxValue={100} aria-label={c.name}>
-                    <ProgressBar.Track>
-                      <ProgressBar.Fill style={{ width: `${pct}%`, background: c.color }} />
-                    </ProgressBar.Track>
-                  </ProgressBar>
-                </div>
-              );
-            })
-          )}
-        </Card.Content>
-      </Card>
+      <CategoryChart
+        title={t.home.top}
+        emptyText={t.home.noMonth}
+        rows={top}
+        total={totalMes}
+        currency={currency}
+        lang={lang}
+        defaultView="bar"
+        storageKey="expenses-chart-inicio"
+      />
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-muted">Recientes</h2>
-        <ExpenseList expenses={recent} currency={currency} />
+        <h2 className="mb-2 text-sm font-medium text-muted">{t.home.recent}</h2>
+        <ExpenseList expenses={recent} currency={currency} lang={lang} t={t} />
       </section>
     </>
   );

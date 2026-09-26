@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation";
-import { Card, Chip, ProgressBar } from "@heroui/react";
+import { Card } from "@heroui/react";
+import { CategoryChart } from "@/components/category-chart";
 import { MonthPager } from "@/components/month-pager";
-import { formatMoney } from "@/lib/currency";
+import { formatMonthYear, formatMoney } from "@/lib/currency";
 import { getMonthExpenses, getProfile, getSession } from "@/lib/queries";
-
-function monthLabel(year: number, month: number) {
-  return new Date(year, month - 1, 1).toLocaleDateString("es", { month: "long", year: "numeric" });
-}
+import { getDictionary } from "@/lib/i18n/server";
 
 export default async function InformesPage({
   searchParams,
@@ -15,6 +13,7 @@ export default async function InformesPage({
 }) {
   const { user } = await getSession();
   if (!user) redirect("/login");
+  const { lang, t } = await getDictionary();
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
 
@@ -26,15 +25,16 @@ export default async function InformesPage({
   const expenses = await getMonthExpenses(year, month);
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const count = expenses.length;
-  const avg = count ? total / count : 0;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dayAvg = total / daysInMonth;
 
   const byCat = new Map<string, { name: string; color: string; icon: string; total: number; n: number }>();
   for (const e of expenses) {
-    const key = e.categories?.name ?? "Sin categoría";
+    const key = e.categories?.name ?? t.list.uncategorized;
     const prev = byCat.get(key) ?? {
       name: key,
-      color: e.categories?.color ?? "#A8A29E",
-      icon: e.categories?.icon ?? "◦",
+      color: e.categories?.color ?? "#64748B",
+      icon: e.categories?.icon ?? "other",
       total: 0,
       n: 0,
     };
@@ -50,10 +50,17 @@ export default async function InformesPage({
   return (
     <>
       <section className="flex items-center justify-between">
-        <MonthPager prevHref={`/informes?y=${prev.y}&m=${prev.m}`} nextHref={`/informes?y=${next.y}&m=${next.m}`}>
+        <MonthPager
+          prevHref={`/informes?y=${prev.y}&m=${prev.m}`}
+          nextHref={`/informes?y=${next.y}&m=${next.m}`}
+          prevLabel={t.reports.prev}
+          nextLabel={t.reports.next}
+        >
           <div className="text-center">
-            <h1 className="text-2xl font-semibold capitalize tracking-tight">{monthLabel(year, month)}</h1>
-            <p className="text-sm text-muted">{count} gastos</p>
+            <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">
+              {formatMonthYear(year, month, lang)}
+            </h1>
+            <p className="text-sm text-muted">{t.reports.count(count)}</p>
           </div>
         </MonthPager>
       </section>
@@ -61,54 +68,34 @@ export default async function InformesPage({
       <section className="grid grid-cols-3 gap-3">
         <Card>
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">Total</p>
-            <p className="mt-1 font-semibold tabular-nums">{formatMoney(total, currency)}</p>
+            <p className="text-xs text-muted">{t.reports.total}</p>
+            <p className="mt-1 font-semibold tabular-nums">{formatMoney(total, currency, lang)}</p>
           </Card.Content>
         </Card>
         <Card>
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">Nº gastos</p>
+            <p className="text-xs text-muted">{t.reports.num}</p>
             <p className="mt-1 font-semibold tabular-nums">{count}</p>
           </Card.Content>
         </Card>
         <Card>
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">Promedio</p>
-            <p className="mt-1 font-semibold tabular-nums">{formatMoney(avg, currency)}</p>
+            <p className="text-xs text-muted">{t.reports.dayAvg}</p>
+            <p className="mt-1 font-semibold tabular-nums">{formatMoney(dayAvg, currency, lang)}</p>
           </Card.Content>
         </Card>
       </section>
 
-      <Card>
-        <Card.Content className="flex flex-col gap-4 p-5">
-          <h2 className="text-sm font-medium text-muted">Por categoría</h2>
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted">Sin gastos este mes.</p>
-          ) : (
-            rows.map((c) => {
-              const pct = total ? Math.round((c.total / total) * 100) : 0;
-              return (
-                <div key={c.name}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span>
-                      {c.icon} {c.name} <Chip size="sm">{c.n}</Chip>
-                    </span>
-                    <span className="font-medium tabular-nums">
-                      {formatMoney(c.total, currency)}{" "}
-                      <span className="font-normal text-muted">{pct}%</span>
-                    </span>
-                  </div>
-                  <ProgressBar value={pct} minValue={0} maxValue={100} aria-label={c.name}>
-                    <ProgressBar.Track>
-                      <ProgressBar.Fill style={{ width: `${pct}%`, background: c.color }} />
-                    </ProgressBar.Track>
-                  </ProgressBar>
-                </div>
-              );
-            })
-          )}
-        </Card.Content>
-      </Card>
+      <CategoryChart
+        title={t.reports.byCat}
+        totalText={formatMoney(total, currency, lang)}
+        rows={rows}
+        total={total}
+        currency={currency}
+        lang={lang}
+        defaultView="pie"
+        storageKey="expenses-chart-informes"
+      />
     </>
   );
 }

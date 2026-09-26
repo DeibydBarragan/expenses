@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getLang } from "@/lib/i18n/server";
 
 function siteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -33,7 +35,7 @@ export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "Correo o contraseña incorrectos." };
+  if (error) return { error: dictionaries[await getLang()].errors.badCreds };
   redirect("/inicio");
 }
 

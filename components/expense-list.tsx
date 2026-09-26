@@ -1,50 +1,78 @@
-import { Button, Card } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { deleteExpense } from "@/actions/expenses";
+import { Stagger, StaggerItem } from "@/components/animated";
+import { CategoryIcon } from "@/components/category-icon";
+import { DeleteButton } from "@/components/delete-button";
 import { formatDateISO, formatMoney } from "@/lib/currency";
-import type { Expense } from "@/lib/types";
+import type { Dictionary, Lang } from "@/lib/i18n/dictionaries";
 
-export function ExpenseList({ expenses, currency }: { expenses: Expense[]; currency: string }) {
+export function ExpenseList({
+  expenses,
+  currency,
+  lang,
+  t,
+}: {
+  expenses: import("@/lib/types").Expense[];
+  currency: string;
+  lang: Lang;
+  t: Dictionary;
+}) {
   if (expenses.length === 0) {
     return (
       <Card>
         <Card.Content className="p-8 text-center">
           <p className="text-2xl text-muted">○</p>
-          <p className="mt-2 font-medium">Sin gastos por aquí</p>
-          <p className="mt-1 text-sm text-muted">Añade tu primer gasto del día.</p>
+          <p className="mt-2 font-medium">{t.list.emptyTitle}</p>
+          <p className="mt-1 text-sm text-muted">{t.list.emptySub}</p>
         </Card.Content>
       </Card>
     );
   }
   return (
-    <ul className="flex flex-col gap-2">
+    <Stagger className="flex flex-col gap-2">
       {expenses.map((e) => (
-        <Card key={e.id}>
-          <Card.Content className="flex items-center gap-3 px-4 py-3">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base"
-              style={{ background: (e.categories?.color ?? "#E7E5E4") + "33" }}
-              title={e.categories?.name}
-            >
-              {e.categories?.icon ?? "◦"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{e.note || e.categories?.name || "Gasto"}</p>
-              <p className="text-xs text-muted">
-                {e.categories?.name ?? "Sin categoría"} · {formatDateISO(e.date)}
-              </p>
-            </div>
-            <span className="text-sm font-semibold tabular-nums">
-              {formatMoney(Number(e.amount), currency)}
-            </span>
-            <form action={deleteExpense}>
-              <input type="hidden" name="id" value={e.id} />
-              <Button variant="ghost" size="sm" isIconOnly type="submit" aria-label="Eliminar gasto">
-                ×
-              </Button>
-            </form>
-          </Card.Content>
-        </Card>
+        <StaggerItem key={e.id}>
+          <Card>
+            <Card.Content className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl"
+                  style={{ background: (e.categories?.color ?? "#64748B") + "40", color: e.categories?.color ?? "#64748B" }}
+                  title={e.categories?.name}
+                >
+                  <CategoryIcon icon={e.categories?.icon ?? "other"} size={19} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-semibold">
+                    {e.note || e.categories?.name || t.list.fallback}
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                    <span
+                      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ background: e.categories?.color ?? "#64748B" }}
+                    />
+                    <span className="truncate">
+                      {e.categories?.name ?? t.list.uncategorized} · {formatDateISO(e.date, lang)}
+                    </span>
+                  </p>
+                </div>
+                <span className="shrink-0 text-[15px] font-bold tabular-nums">
+                  {formatMoney(Number(e.amount), currency, lang)}
+                </span>
+                <DeleteButton
+                  action={deleteExpense}
+                  id={e.id}
+                  title={t.del.titleExpense}
+                  message={t.list.delConfirm}
+                  cancelLabel={t.del.cancel}
+                  confirmLabel={t.del.confirm}
+                  ariaLabel={t.list.delLabel}
+                />
+              </div>
+            </Card.Content>
+          </Card>
+        </StaggerItem>
       ))}
-    </ul>
+    </Stagger>
   );
 }

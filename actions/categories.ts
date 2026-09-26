@@ -2,29 +2,36 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { CATEGORY_ICON_KEYS } from "@/lib/category-icons";
+import { dictionaries } from "@/lib/i18n/dictionaries";
+import { getLang } from "@/lib/i18n/server";
 
-const PALETTE = ["#D6A99C", "#A8B8A0", "#C4B5A5", "#9CAF88", "#D4C5A9", "#B8A9C9", "#93A8AC", "#A8A29E"];
+const PALETTE = ["#F97316", "#2563EB", "#9333EA", "#16A34A", "#DB2777", "#0891B2", "#65A30D", "#64748B"];
 
 export async function createCategory(formData: FormData) {
   const supabase = await createClient();
+  const t = dictionaries[await getLang()].errors;
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "No has iniciado sesión." };
+  if (!user) return { error: t.saveFail };
 
   const name = String(formData.get("name") ?? "").trim().slice(0, 30);
-  if (!name) return { error: "Escribe un nombre." };
+  if (!name) return { error: t.needName };
 
   const { data: existing } = await supabase
     .from("categories")
     .select("id")
     .eq("user_id", user.id);
-  const color = PALETTE[(existing?.length ?? 0) % PALETTE.length];
+  const n = existing?.length ?? 0;
 
-  const { error } = await supabase
-    .from("categories")
-    .insert({ user_id: user.id, name, icon: "◦", color });
-  if (error) return { error: "Esa categoría ya existe." };
+  const { error } = await supabase.from("categories").insert({
+    user_id: user.id,
+    name,
+    icon: CATEGORY_ICON_KEYS[n % CATEGORY_ICON_KEYS.length],
+    color: PALETTE[n % PALETTE.length],
+  });
+  if (error) return { error: t.catExists };
 
   revalidatePath("/categorias");
   revalidatePath("/gastos");
@@ -41,11 +48,7 @@ export async function deleteCategory(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase
-    .from("categories")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id);
+  await supabase.from("categories").delete().eq("id", id).eq("user_id", user.id);
 
   revalidatePath("/categorias");
   revalidatePath("/gastos");

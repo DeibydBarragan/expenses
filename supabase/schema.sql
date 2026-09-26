@@ -63,14 +63,14 @@ begin
   on conflict (id) do nothing;
 
   insert into public.categories (user_id, name, icon, color) values
-    (new.id, 'Comida', '🍽', '#D6A99C'),
-    (new.id, 'Transporte', '🚲', '#A8B8A0'),
-    (new.id, 'Casa', '⌂', '#C4B5A5'),
-    (new.id, 'Salud', '＋', '#9CAF88'),
-    (new.id, 'Ocio', '☆', '#D4C5A9'),
-    (new.id, 'Compras', '○', '#B8A9C9'),
-    (new.id, 'Servicios', '◌', '#93A8AC'),
-    (new.id, 'Otros', '◦', '#A8A29E')
+    (new.id, 'Comida', 'food', '#F97316'),
+    (new.id, 'Transporte', 'transport', '#2563EB'),
+    (new.id, 'Casa', 'home', '#9333EA'),
+    (new.id, 'Salud', 'health', '#16A34A'),
+    (new.id, 'Ocio', 'fun', '#DB2777'),
+    (new.id, 'Compras', 'shopping', '#0891B2'),
+    (new.id, 'Servicios', 'bills', '#65A30D'),
+    (new.id, 'Otros', 'other', '#64748B')
   on conflict do nothing;
 
   return new;

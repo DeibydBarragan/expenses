@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "@heroui/react";
 
 type Theme = "light" | "dark";
@@ -10,11 +11,20 @@ export function getStoredTheme(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
-export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(getStoredTheme);
+export function ThemeToggle({ labelLight, labelDark }: { labelLight: string; labelDark: string }) {
+  // Estado inicial fijo para coincidir con el servidor; se sincroniza tras hidratar.
+  const [theme, setTheme] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    // Sincronización intencional solo al montar.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(getStoredTheme());
+    setMounted(true);
+  }, []);
 
   function toggle() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
+    const next: Theme = (mounted ? theme : getStoredTheme()) === "dark" ? "light" : "dark";
     document.documentElement.classList.toggle("dark", next === "dark");
     try {
       localStorage.setItem("expenses-theme", next);
@@ -22,26 +32,20 @@ export function ThemeToggle() {
       // almacenamiento no disponible, el tema solo vive en memoria
     }
     setTheme(next);
+    setMounted(true);
   }
+
+  const shown: Theme = mounted ? theme : "light";
 
   return (
     <Button
       variant="ghost"
       size="sm"
       isIconOnly
-      aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      aria-label={shown === "dark" ? labelLight : labelDark}
       onPress={toggle}
     >
-      {theme === "dark" ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-        </svg>
-      )}
+      {shown === "dark" ? <Sun size={16} /> : <Moon size={16} />}
     </Button>
   );
 }

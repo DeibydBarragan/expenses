@@ -8,12 +8,15 @@ import {
   Label,
   ListBox,
   Select,
+  Spinner,
   TextField,
 } from "@heroui/react";
 import { signIn, signUp, signInWithGoogle } from "@/actions/auth";
 import { CURRENCIES } from "@/lib/currency";
+import { useLang } from "@/components/language";
 
 export function LoginForm() {
+  const { t } = useLang();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -29,16 +32,26 @@ export function LoginForm() {
     <div className="flex flex-col gap-4">
       <form action={handle} className="flex flex-col gap-4">
         <TextField fullWidth isRequired name="email" type="email">
-          <Label>Correo</Label>
-          <Input placeholder="tu@correo.com" />
+          <Label>{t.login.email}</Label>
+          <Input placeholder="tu@correo.com" autoComplete="email" spellCheck={false} />
         </TextField>
         <TextField fullWidth isRequired name="password" type="password">
-          <Label>Contraseña</Label>
-          <Input placeholder="••••••••" />
+          <Label>{t.login.password}</Label>
+          <Input placeholder="••••••••" autoComplete="current-password" />
         </TextField>
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p aria-live="polite" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
         <Button fullWidth variant="primary" type="submit" isDisabled={pending}>
-          {pending ? "Entrando…" : "Entrar"}
+          {pending ? (
+            <span className="flex items-center gap-2">
+              <Spinner size="sm" color="current" /> {t.login.signingIn}
+            </span>
+          ) : (
+            t.login.signIn
+          )}
         </Button>
       </form>
       <GoogleButton />
@@ -47,6 +60,7 @@ export function LoginForm() {
 }
 
 export function RegisterForm() {
+  const { t } = useLang();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -62,20 +76,20 @@ export function RegisterForm() {
     <div className="flex flex-col gap-4">
       <form action={handle} className="flex flex-col gap-4">
         <TextField fullWidth name="name">
-          <Label>Nombre</Label>
-          <Input placeholder="Tu nombre" />
+          <Label>{t.register.name}</Label>
+          <Input placeholder={t.register.namePh} autoComplete="name" />
         </TextField>
         <TextField fullWidth isRequired name="email" type="email">
-          <Label>Correo</Label>
-          <Input placeholder="tu@correo.com" />
+          <Label>{t.register.email}</Label>
+          <Input placeholder="tu@correo.com" autoComplete="email" spellCheck={false} />
         </TextField>
         <TextField fullWidth isRequired name="password" type="password">
-          <Label>Contraseña</Label>
-          <Input placeholder="Mínimo 6 caracteres" />
-          <Description>Mínimo 6 caracteres.</Description>
+          <Label>{t.register.password}</Label>
+          <Input placeholder={t.register.passPh} autoComplete="new-password" />
+          <Description>{t.register.passHint}</Description>
         </TextField>
-        <Select fullWidth isRequired name="currency" defaultValue="COP" placeholder="Elige moneda">
-          <Label>Moneda</Label>
+        <Select fullWidth isRequired name="currency" defaultValue="COP" placeholder={t.expense.choose}>
+          <Label>{t.register.currency}</Label>
           <Select.Trigger>
             <Select.Value />
             <Select.Indicator />
@@ -83,26 +97,38 @@ export function RegisterForm() {
           <Select.Popover>
             <ListBox>
               {CURRENCIES.map((c) => (
-                <ListBox.Item key={c.code} id={c.code} textValue={c.label}>
-                  {c.label}
+                <ListBox.Item key={c.code} id={c.code} textValue={t.currencies[c.code]}>
+                  {t.currencies[c.code]}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
               ))}
             </ListBox>
           </Select.Popover>
-          <Description>Podrás cambiarla después si lo necesitas.</Description>
+          <Description>{t.register.currencyHint}</Description>
         </Select>
-        {error && <p className="text-sm text-danger">{error}</p>}
+        {error && (
+          <p aria-live="polite" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
         <Button fullWidth variant="primary" type="submit" isDisabled={pending}>
-          {pending ? "Creando…" : "Crear cuenta"}
+          {pending ? (
+            <span className="flex items-center gap-2">
+              <Spinner size="sm" color="current" /> {t.register.creating}
+            </span>
+          ) : (
+            t.register.create
+          )}
         </Button>
       </form>
-      <GoogleButton label="Continuar con Google" />
+      <GoogleButton label={t.login.google} />
     </div>
   );
 }
 
-function GoogleButton({ label = "Continuar con Google" }: { label?: string }) {
+function GoogleButton({ label }: { label?: string }) {
+  const { t } = useLang();
+  const text = label ?? t.login.google;
   return (
     <form action={signInWithGoogle}>
       <Button fullWidth variant="outline" type="submit">
@@ -112,7 +138,7 @@ function GoogleButton({ label = "Continuar con Google" }: { label?: string }) {
           <path fill="#FBBC05" d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4l-.1-.1-3.5-2.7-.1.1C.5 8.7 0 10.3 0 12s.5 3.3 1.5 4.8l3.7-2.4z" />
           <path fill="#EA4335" d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.5 0 3.5 2.6 1.5 6.8l3.7 2.9c1-2.9 3.7-5 6.8-5z" />
         </svg>
-        {label}
+        {text}
       </Button>
     </form>
   );

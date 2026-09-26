@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Tabs } from "@heroui/react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINKS = [
   { href: "/inicio", label: "Inicio" },
@@ -18,8 +19,9 @@ export function AppNav({ name, onSignOut }: { name?: string | null; onSignOut: (
     <header className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex max-w-xl items-center justify-between px-5 py-3">
         <span className="text-sm font-semibold tracking-tight">expenses</span>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <span className="hidden max-w-[120px] truncate text-xs text-muted sm:block">{name}</span>
+          <ThemeToggle />
           <Button variant="ghost" size="sm" onPress={() => onSignOut()}>
             Salir
           </Button>

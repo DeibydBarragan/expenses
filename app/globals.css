@@ -5,12 +5,36 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Tema tranquilo: fondo cálido + acento salvia */
+/* Tema Bosque — verdes profundos, tranquilo y natural */
 :root {
-  --background: #faf9f7;
-  --accent: #5f6f5a;
+  --background: #f4f6f3;
+  --foreground: #1c2622;
+  --surface: #ffffff;
+  --surface-foreground: #1c2622;
+  --accent: #2e6b4f;
   --accent-foreground: #ffffff;
   --radius: 0.9rem;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0d1411;
+  --foreground: #e9efea;
+  --surface: #151e19;
+  --surface-foreground: #e9efea;
+  --surface-secondary: #1a2420;
+  --overlay: #1a2420;
+  --overlay-foreground: #e9efea;
+  --muted: #93a89a;
+  --field-background: #1a2420;
+  --field-foreground: #e9efea;
+  --accent: #57b585;
+  --accent-foreground: #0d1411;
+  --border: #243129;
+  --separator: #243129;
+  --default: #1a2420;
+  --default-foreground: #e9efea;
+  color-scheme: dark;
 }
 
 body {

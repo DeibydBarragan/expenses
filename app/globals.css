@@ -5,36 +5,15 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Tema Bosque — verdes profundos, tranquilo y natural */
+/* Acento índigo sobre el tema default de HeroUI */
 :root {
-  --background: #f4f6f3;
-  --foreground: #1c2622;
-  --surface: #ffffff;
-  --surface-foreground: #1c2622;
-  --accent: #2e6b4f;
+  --accent: #4338ca;
   --accent-foreground: #ffffff;
-  --radius: 0.9rem;
-  color-scheme: light;
 }
 
 .dark {
-  --background: #0d1411;
-  --foreground: #e9efea;
-  --surface: #151e19;
-  --surface-foreground: #e9efea;
-  --surface-secondary: #1a2420;
-  --overlay: #1a2420;
-  --overlay-foreground: #e9efea;
-  --muted: #93a89a;
-  --field-background: #1a2420;
-  --field-foreground: #e9efea;
-  --accent: #57b585;
-  --accent-foreground: #0d1411;
-  --border: #243129;
-  --separator: #243129;
-  --default: #1a2420;
-  --default-foreground: #e9efea;
-  color-scheme: dark;
+  --accent: #a5b4fc;
+  --accent-foreground: #1e1b4b;
 }
 
 body {

@@ -26,7 +26,7 @@ export function AppNav({ name, onSignOut }: { name?: string | null; onSignOut: (
           expenses
         </span>
         <div className="flex items-center gap-1">
-          <span className="hidden max-w-[120px] truncate text-xs text-muted sm:block">{firstName}</span>
+          <span className="mr-2 hidden max-w-[120px] truncate text-xs text-muted sm:block">{firstName}</span>
           <LanguageToggle />
           <ThemeToggle labelLight={t.themeToggle.toLight} labelDark={t.themeToggle.toDark} />
           <Button variant="ghost" size="sm" onPress={() => onSignOut()}>

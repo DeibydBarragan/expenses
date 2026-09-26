@@ -1,34 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# expenses · gastos con calma
 
-## Getting Started
+Web minimalista para registrar gastos diarios. Next.js + Server Actions + Supabase.
 
-First, run the development server:
+## Puesta en marcha
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. **Crea el proyecto en Supabase** (https://supabase.com) y ejecuta `supabase/schema.sql` en el SQL Editor.
+   Esto crea `profiles`, `categories`, `expenses`, las políticas RLS y el trigger que genera
+   el perfil + 8 categorías al registrarse (con la moneda elegida).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Auth > Providers > Google**: activa Google y añade como redirect:
+   `https://tu-proyecto.supabase.co/auth/v1/callback` y en tu app `NEXT_PUBLIC_SITE_URL/auth/callback`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Variables de entorno** — copia `.env.example` a `.env.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
 
-## Learn More
+4. **Arranca**:
+   ```
+   npm install
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+## Estructura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/page.tsx` — landing
+- `app/login`, `app/registro` — auth email + Google (moneda elegible al registrarse, COP por defecto)
+- `app/(app)/inicio` — dashboard (total mes/hoy, top categorías, recientes)
+- `app/(app)/gastos` — lista + alta
+- `app/(app)/informes` — por mes y categoría (`?y=2026&m=9`)
+- `app/(app)/categorias` — gestión simple
+- `actions/` — solo Server Actions, sin API propia
+- `proxy.ts` — refresco de sesión + protección de rutas (nuevo nombre de middleware en Next 16)

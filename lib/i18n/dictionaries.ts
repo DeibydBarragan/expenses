@@ -105,6 +105,9 @@ const es = {
   settings: {
     title: "Ajustes",
     subtitle: "Tu moneda y preferencias.",
+    profile: "Perfil",
+    name: "Nombre",
+    email: "Correo",
     currency: "Moneda",
     currencyHint: "Se aplica a todos tus informes.",
     save: "Guardar",
@@ -251,6 +254,9 @@ const en: Dictionary = {
   settings: {
     title: "Settings",
     subtitle: "Your currency and preferences.",
+    profile: "Profile",
+    name: "Name",
+    email: "Email",
     currency: "Currency",
     currencyHint: "Applies to all your reports.",
     save: "Save",

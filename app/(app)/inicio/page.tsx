@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Card } from "@heroui/react";
+import { FadeIn } from "@/components/animated";
 import { CategoryChart } from "@/components/category-chart";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
@@ -52,28 +53,32 @@ export default async function InicioPage() {
         <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">{monthName}</h1>
       </section>
 
-      <section className="grid grid-cols-2 gap-3">
-        <Card>
-          <Card.Content className="p-4">
-            <p className="text-xs text-muted">{t.home.thisMonth}</p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">
-              {formatMoney(totalMes, currency, lang)}
-            </p>
-          </Card.Content>
-        </Card>
-        <Card>
-          <Card.Content className="p-4">
-            <p className="text-xs text-muted">{t.home.today}</p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">
-              {formatMoney(totalHoy, currency, lang)}
-            </p>
-          </Card.Content>
-        </Card>
-      </section>
+      <FadeIn>
+        <section className="grid grid-cols-2 gap-3">
+          <Card>
+            <Card.Content className="p-4">
+              <p className="text-xs text-muted">{t.home.thisMonth}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">
+                {formatMoney(totalMes, currency, lang)}
+              </p>
+            </Card.Content>
+          </Card>
+          <Card>
+            <Card.Content className="p-4">
+              <p className="text-xs text-muted">{t.home.today}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums">
+                {formatMoney(totalHoy, currency, lang)}
+              </p>
+            </Card.Content>
+          </Card>
+        </section>
+      </FadeIn>
 
       <ExpenseForm categories={categories} currency={currency} />
 
-      <StreakCard streak={streak} t={t} />
+      <FadeIn delay={0.05}>
+        <StreakCard streak={streak} t={t} />
+      </FadeIn>
 
       <CategoryChart
         title={t.home.top}

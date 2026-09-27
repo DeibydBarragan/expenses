@@ -29,7 +29,10 @@ export function ExpenseList({
     );
   }
   return (
-    <Stagger className="flex flex-col gap-2">
+    <Stagger
+      className="flex flex-col gap-2"
+      key={expenses.map((e) => e.id).join(",")}
+    >
       {expenses.map((e) => (
         <StaggerItem key={e.id}>
           <Card>

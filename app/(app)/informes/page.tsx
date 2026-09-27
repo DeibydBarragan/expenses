@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Card } from "@heroui/react";
+import { FadeIn } from "@/components/animated";
 import { CategoryChart } from "@/components/category-chart";
 import { MonthPager } from "@/components/month-pager";
 import { formatMonthYear, formatMoney } from "@/lib/currency";
@@ -49,23 +50,26 @@ export default async function InformesPage({
 
   return (
     <>
-      <section className="flex items-center justify-between">
-        <MonthPager
-          prevHref={`/informes?y=${prev.y}&m=${prev.m}`}
-          nextHref={`/informes?y=${next.y}&m=${next.m}`}
-          prevLabel={t.reports.prev}
-          nextLabel={t.reports.next}
-        >
-          <div className="text-center">
-            <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">
-              {formatMonthYear(year, month, lang)}
-            </h1>
-            <p className="text-sm text-muted">{t.reports.count(count)}</p>
-          </div>
-        </MonthPager>
-      </section>
+      <FadeIn>
+        <section className="flex items-center justify-between">
+          <MonthPager
+            prevHref={`/informes?y=${prev.y}&m=${prev.m}`}
+            nextHref={`/informes?y=${next.y}&m=${next.m}`}
+            prevLabel={t.reports.prev}
+            nextLabel={t.reports.next}
+          >
+            <div className="text-center">
+              <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">
+                {formatMonthYear(year, month, lang)}
+              </h1>
+              <p className="text-sm text-muted">{t.reports.count(count)}</p>
+            </div>
+          </MonthPager>
+        </section>
+      </FadeIn>
 
-      <section className="grid grid-cols-3 gap-3">
+      <FadeIn delay={0.05}>
+        <section className="grid grid-cols-3 gap-3">
         <Card>
           <Card.Content className="p-4">
             <p className="text-xs text-muted">{t.reports.total}</p>
@@ -85,17 +89,20 @@ export default async function InformesPage({
           </Card.Content>
         </Card>
       </section>
+      </FadeIn>
 
-      <CategoryChart
-        title={t.reports.byCat}
-        totalText={formatMoney(total, currency, lang)}
-        rows={rows}
-        total={total}
-        currency={currency}
-        lang={lang}
-        defaultView="pie"
-        storageKey="expenses-chart-informes"
-      />
+      <FadeIn delay={0.1}>
+        <CategoryChart
+          title={t.reports.byCat}
+          totalText={formatMoney(total, currency, lang)}
+          rows={rows}
+          total={total}
+          currency={currency}
+          lang={lang}
+          defaultView="pie"
+          storageKey="expenses-chart-informes"
+        />
+      </FadeIn>
     </>
   );
 }

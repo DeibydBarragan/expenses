@@ -43,7 +43,10 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
       {categories.length === 0 ? (
         <p className="text-center text-sm text-muted">{t.categories.empty}</p>
       ) : (
-        <Stagger className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Stagger
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+          key={categories.map((c) => c.id + c.name + c.icon).join(",")}
+        >
           {categories.map((c) => (
             <StaggerItem key={c.id}>
               <Card className="h-full">

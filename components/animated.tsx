@@ -7,7 +7,7 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
 }
 
 const item = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0 },
 };
 
@@ -23,7 +23,7 @@ export function Stagger({
       className={className}
       initial="hidden"
       animate="show"
-      variants={{ show: { transition: { staggerChildren: 0.045 } } }}
+      variants={{ show: { transition: { staggerChildren: 0.06 } } }}
     >
       {children}
     </motion.ul>
@@ -38,7 +38,7 @@ export function StaggerItem({
   className?: string;
 }) {
   return (
-    <motion.li className={className} variants={item} transition={{ duration: 0.25, ease: "easeOut" }}>
+    <motion.li className={className} variants={item} transition={{ duration: 0.32, ease: "easeOut" }}>
       {children}
     </motion.li>
   );
@@ -56,9 +56,9 @@ export function FadeIn({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut", delay }}
+      transition={{ duration: 0.35, ease: "easeOut", delay }}
     >
       {children}
     </motion.div>

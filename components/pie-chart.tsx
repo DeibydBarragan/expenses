@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Chip } from "@heroui/react";
+import { Stagger, StaggerItem } from "@/components/animated";
 import { formatMoney } from "@/lib/currency";
 import type { Lang } from "@/lib/i18n/dictionaries";
 
@@ -116,12 +117,12 @@ export function PieChart({
         </div>
       )}
 
-      <ul className="flex flex-col gap-2.5 pt-1">
+      <Stagger className="flex flex-col gap-2.5 pt-1">
         {segs.map((s, i) => {
           const pct = total ? Math.round((s.total / total) * 100) : 0;
           const dimmed = active !== null && active !== i;
           return (
-            <li key={s.name}>
+            <StaggerItem key={s.name}>
               <div
                 className="flex items-center justify-between gap-2 text-sm"
                 style={{ opacity: dimmed ? 0.45 : 1, transition: "opacity 0.15s ease" }}
@@ -138,10 +139,10 @@ export function PieChart({
                   <span className="text-muted">{pct}%</span>
                 </span>
               </div>
-            </li>
+            </StaggerItem>
           );
         })}
-      </ul>
+      </Stagger>
     </div>
   );
 }

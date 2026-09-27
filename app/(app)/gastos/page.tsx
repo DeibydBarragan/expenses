@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { FadeIn } from "@/components/animated";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { getCategories, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
@@ -13,10 +14,12 @@ export default async function GastosPage() {
 
   return (
     <>
-      <section>
-        <h1 className="text-balance text-2xl font-semibold tracking-tight">{t.nav.expenses}</h1>
-        <p className="mt-1 text-sm text-muted">{t.list.allSub}</p>
-      </section>
+      <FadeIn>
+        <section>
+          <h1 className="text-balance text-2xl font-semibold tracking-tight">{t.nav.expenses}</h1>
+          <p className="mt-1 text-sm text-muted">{t.list.allSub}</p>
+        </section>
+      </FadeIn>
       <ExpenseForm categories={categories} currency={profile?.currency ?? "COP"} />
       <ExpenseList expenses={expenses} currency={profile?.currency ?? "COP"} lang={lang} t={t} />
     </>

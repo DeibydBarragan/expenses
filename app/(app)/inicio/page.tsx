@@ -8,6 +8,7 @@ import { StreakCard } from "@/components/streak-card";
 import { formatMoney } from "@/lib/currency";
 import { getCategories, getCoveredDates, getMonthExpenses, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
 import { computeStreak } from "@/lib/streak";
+import { getTimeZone, todayISOInTZ } from "@/lib/time";
 import { getDictionary } from "@/lib/i18n/server";
 
 export default async function InicioPage() {
@@ -24,7 +25,7 @@ export default async function InicioPage() {
     getCategories(),
     getCoveredDates(),
   ]);
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = todayISOInTZ(await getTimeZone());
   const streak = computeStreak(covered, todayStr);
 
   const totalMes = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);

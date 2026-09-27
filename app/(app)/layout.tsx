@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { AppNav } from "@/components/app-nav";
 import { MotionProvider } from "@/components/animated";
 import { LanguageProvider } from "@/components/language";
+import { RefreshOnFocus } from "@/components/refresh-on-focus";
+import { TimezoneCookie } from "@/components/timezone-cookie";
 import { signOut } from "@/actions/auth";
 import { getProfile, getSession } from "@/lib/queries";
 import { getDictionary } from "@/lib/i18n/server";
@@ -15,6 +17,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <LanguageProvider lang={lang}>
       <MotionProvider>
+        <TimezoneCookie />
+        <RefreshOnFocus />
         <div className="min-h-screen">
         <a
           href="#main-content"

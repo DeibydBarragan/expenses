@@ -2,6 +2,8 @@ export type Profile = {
   id: string;
   name: string | null;
   currency: string;
+  streak_reset_at: string | null;
+  show_streak: boolean;
 };
 
 export type Category = {

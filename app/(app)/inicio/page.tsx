@@ -6,7 +6,7 @@ import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { StreakCard } from "@/components/streak-card";
 import { formatMoney } from "@/lib/currency";
-import { getCategories, getCoveredDates, getMonthExpenses, getProfile, getRecentExpenses, getSession } from "@/lib/queries";
+import { getCategories, getMonthExpenses, getProfile, getRecentExpenses, getSession, getStreakActivity } from "@/lib/queries";
 import { computeStreak } from "@/lib/streak";
 import { getTimeZone, todayISOInTZ } from "@/lib/time";
 import { getDictionary } from "@/lib/i18n/server";
@@ -19,14 +19,14 @@ export default async function InicioPage() {
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
   const now = new Date();
-  const [monthExpenses, recent, categories, covered] = await Promise.all([
+  const [monthExpenses, recent, categories, activity] = await Promise.all([
     getMonthExpenses(now.getFullYear(), now.getMonth() + 1),
     getRecentExpenses(5),
     getCategories(),
-    getCoveredDates(),
+    getStreakActivity(),
   ]);
   const todayStr = todayISOInTZ(await getTimeZone());
-  const streak = computeStreak(covered, todayStr);
+  const streak = computeStreak(activity, todayStr, profile?.streak_reset_at ?? null);
 
   const totalMes = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const totalHoy = monthExpenses
@@ -77,9 +77,11 @@ export default async function InicioPage() {
 
       <ExpenseForm categories={categories} currency={currency} />
 
-      <FadeIn delay={0.05}>
-        <StreakCard streak={streak} t={t} />
-      </FadeIn>
+      {profile?.show_streak !== false && (
+        <FadeIn delay={0.05}>
+          <StreakCard streak={streak} t={t} lang={lang} />
+        </FadeIn>
+      )}
 
       <CategoryChart
         title={t.home.top}

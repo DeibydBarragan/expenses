@@ -3,14 +3,25 @@ import { User } from "lucide-react";
 import { Card } from "@heroui/react";
 import { FadeIn } from "@/components/animated";
 import { CurrencySettings } from "@/components/currency-settings";
-import { getProfile, getSession } from "@/lib/queries";
+import { DeleteAccount } from "@/components/delete-account";
+import { ResetStreak } from "@/components/reset-streak";
+import { StreakCard } from "@/components/streak-card";
+import { StreakVisibility } from "@/components/streak-visibility";
+import { getProfile, getSession, getStreakActivity } from "@/lib/queries";
+import { computeStreak } from "@/lib/streak";
+import { getTimeZone, todayISOInTZ } from "@/lib/time";
 import { getDictionary } from "@/lib/i18n/server";
 
 export default async function AjustesPage() {
   const { user } = await getSession();
   if (!user) redirect("/login");
-  const { t } = await getDictionary();
+  const { lang, t } = await getDictionary();
   const profile = await getProfile(user.id);
+  const streak = computeStreak(
+    await getStreakActivity(),
+    todayISOInTZ(await getTimeZone()),
+    profile?.streak_reset_at ?? null
+  );
 
   return (
     <>
@@ -31,8 +42,22 @@ export default async function AjustesPage() {
           </Card.Content>
         </Card>
       </FadeIn>
-      <FadeIn delay={0.05}>
+      {profile?.show_streak !== false && (
+        <FadeIn delay={0.05}>
+          <StreakCard streak={streak} t={t} lang={lang} showLastDay />
+        </FadeIn>
+      )}
+      <FadeIn delay={0.08}>
+        <StreakVisibility current={profile?.show_streak ?? true} />
+      </FadeIn>
+      <FadeIn delay={0.1}>
         <CurrencySettings current={profile?.currency ?? "COP"} />
+      </FadeIn>
+      <FadeIn delay={0.15}>
+        <ResetStreak />
+      </FadeIn>
+      <FadeIn delay={0.2}>
+        <DeleteAccount />
       </FadeIn>
     </>
   );

@@ -23,3 +23,18 @@ export async function updateCurrency(formData: FormData) {
   for (const p of ["/inicio", "/gastos", "/informes", "/ajustes"]) revalidatePath(p);
   return { ok: true, saved: t.settings.saved };
 }
+
+export async function updateShowStreak(value: boolean) {
+  const supabase = await createClient();
+  const t = dictionaries[await getLang()];
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: t.errors.saveFail };
+
+  const { error } = await supabase.from("profiles").update({ show_streak: value }).eq("id", user.id);
+  if (error) return { error: t.errors.saveFail };
+
+  for (const p of ["/inicio", "/ajustes"]) revalidatePath(p);
+  return { ok: true };
+}

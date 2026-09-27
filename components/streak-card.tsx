@@ -1,10 +1,21 @@
-import { CircleCheck, Flame, Snowflake } from "lucide-react";
+import { Flame, Snowflake } from "lucide-react";
 import { Card, Chip } from "@heroui/react";
 import { MarkTodayButton } from "@/components/mark-today";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { formatDayLong } from "@/lib/currency";
+import type { Dictionary, Lang } from "@/lib/i18n/dictionaries";
 import type { Streak } from "@/lib/streak";
 
-export function StreakCard({ streak, t }: { streak: Streak; t: Dictionary }) {
+export function StreakCard({
+  streak,
+  t,
+  lang,
+  showLastDay = false,
+}: {
+  streak: Streak;
+  t: Dictionary;
+  lang: Lang;
+  showLastDay?: boolean;
+}) {
   const lit = streak.current > 0;
   return (
     <Card>
@@ -38,13 +49,16 @@ export function StreakCard({ streak, t }: { streak: Streak; t: Dictionary }) {
           {streak.freeze ? t.streak.freezeReady : t.streak.freezeLocked}
         </div>
 
-        {!streak.todayCovered ? (
-          <MarkTodayButton />
-        ) : (
-          <p className="flex items-center gap-1.5 text-xs font-medium text-success">
-            <CircleCheck size={14} /> {t.streak.covered}
+        {showLastDay && streak.lastCovered && (
+          <p className="text-xs text-muted">
+            {t.streak.lastDay}:{" "}
+            <span className="font-medium text-foreground">
+              {formatDayLong(streak.lastCovered, lang)}
+            </span>
           </p>
         )}
+
+        {!streak.todayCovered && <MarkTodayButton />}
       </Card.Content>
     </Card>
   );

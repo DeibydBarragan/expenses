@@ -11,7 +11,7 @@ export async function getSession() {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("id, name, currency").eq("id", userId).single();
+  const { data } = await supabase.from("profiles").select("id, name, currency, streak_reset_at, show_streak").eq("id", userId).single();
   return data as Profile | null;
 }
 
@@ -46,15 +46,17 @@ export async function getMonthExpenses(year: number, month: number): Promise<Exp
   return (data ?? []) as unknown as Expense[];
 }
 
-/** Fechas cubiertas para la racha: días con gastos + días marcados "sin gastos". */
-export async function getCoveredDates(): Promise<Set<string>> {
+/** Actividad para la racha: días con gastos + marcas, con hora de creación. */
+export async function getStreakActivity(): Promise<{ date: string; createdAt: string }[]> {
   const supabase = await createClient();
   const [exp, marks] = await Promise.all([
-    supabase.from("expenses").select("date"),
-    supabase.from("day_marks").select("date"),
+    supabase.from("expenses").select("date, created_at"),
+    supabase.from("day_marks").select("date, created_at"),
   ]);
-  const set = new Set<string>();
-  for (const r of (exp.data ?? []) as { date: string }[]) set.add(r.date);
-  for (const r of (marks.data ?? []) as { date: string }[]) set.add(r.date);
-  return set;
+  const out: { date: string; createdAt: string }[] = [];
+  for (const r of (exp.data ?? []) as { date: string; created_at: string }[])
+    out.push({ date: r.date, createdAt: r.created_at });
+  for (const r of (marks.data ?? []) as { date: string; created_at: string }[])
+    out.push({ date: r.date, createdAt: r.created_at });
+  return out;
 }

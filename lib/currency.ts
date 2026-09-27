@@ -48,6 +48,18 @@ export function formatDateISO(dateStr: string, lang: Lang = "es") {
   return d.toLocaleDateString(lang === "en" ? "en" : "es", { day: "numeric", month: "short" });
 }
 
+/** Fecha larga para "último día de racha" (año solo si no es el actual). */
+export function formatDayLong(dateStr: string, lang: Lang = "es") {
+  const d = new Date(dateStr + "T12:00:00");
+  const locale = lang === "en" ? "en" : "es";
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
 export function formatMonthYear(year: number, month: number, lang: Lang) {
   return new Date(year, month - 1, 1).toLocaleDateString(lang === "en" ? "en" : "es", {
     month: "long",

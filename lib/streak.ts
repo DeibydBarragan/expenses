@@ -7,6 +7,8 @@ export type Streak = {
   freeze: boolean;
   /** Hoy ya está cubierto (gastos o marca de "sin gastos"). */
   todayCovered: boolean;
+  /** Último día cubierto (≤ hoy), o null si no hay. */
+  lastCovered: string | null;
 };
 
 function toISODate(d: Date): string {
@@ -25,8 +27,10 @@ function addDaysISO(iso: string, n: number): string {
   return toISODate(d);
 }
 
+export type DayActivity = { date: string; createdAt: string };
+
 /**
- * Calcula la racha a partir del conjunto de días cubiertos (YYYY-MM-DD).
+ * Calcula la racha a partir de la actividad (fecha + hora de creación).
  *
  * Reglas:
  * - Día cubierto: racha +1. Al iniciar racha (0→1) se otorga un congelamiento;
@@ -34,11 +38,30 @@ function addDaysISO(iso: string, n: number): string {
  * - Día fallado (pasado): si hay racha y congelamiento, se consume y la racha
  *   se congela; si no, la racha se reinicia a 0.
  * - Hoy sin cubrir está "pendiente": no cuenta como fallo hasta mañana.
+ * - `resetTs` (reinicio manual): ignora la actividad anterior a ese momento.
  */
-export function computeStreak(coveredDates: Set<string> | string[], todayISO: string): Streak {
-  const covered = coveredDates instanceof Set ? coveredDates : new Set(coveredDates);
+export function computeStreak(
+  activity: DayActivity[],
+  todayISO: string,
+  resetTs: string | null = null
+): Streak {
+  const maxCreated = new Map<string, string>();
+  for (const a of activity) {
+    const m = maxCreated.get(a.date);
+    if (!m || a.createdAt > m) maxCreated.set(a.date, a.createdAt);
+  }
+
+  const resetDay = resetTs ? resetTs.slice(0, 10) : null;
+  const covered = new Set<string>();
+  for (const [date, mc] of maxCreated) {
+    if (!resetDay || date > resetDay || (date === resetDay && resetTs && mc >= resetTs)) {
+      covered.add(date);
+    }
+  }
+
   const todayCovered = covered.has(todayISO);
-  if (covered.size === 0) return { current: 0, best: 0, freeze: false, todayCovered: false };
+  const lastCovered = [...covered].filter((d) => d <= todayISO).sort().pop() ?? null;
+  if (covered.size === 0) return { current: 0, best: 0, freeze: false, todayCovered: false, lastCovered: null };
 
   const first = [...covered].sort()[0];
   const end = todayCovered ? todayISO : addDaysISO(todayISO, -1);
@@ -65,5 +88,5 @@ export function computeStreak(coveredDates: Set<string> | string[], todayISO: st
     }
   }
 
-  return { current: streak, best, freeze, todayCovered };
+  return { current: streak, best, freeze, todayCovered, lastCovered };
 }

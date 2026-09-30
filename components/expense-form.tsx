@@ -23,7 +23,9 @@ export function ExpenseForm({ categories, currency }: { categories: Category[]; 
   const { t } = useLang();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
-  const today = new Date().toISOString().slice(0, 10);
+  // Fecha LOCAL del dispositivo (toISOString usa UTC y adelanta el día en la noche)
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   return (
     <Modal>

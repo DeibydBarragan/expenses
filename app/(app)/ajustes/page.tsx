@@ -4,6 +4,7 @@ import { Card } from "@heroui/react";
 import { FadeIn } from "@/components/animated";
 import { CurrencySettings } from "@/components/currency-settings";
 import { DeleteAccount } from "@/components/delete-account";
+import { PasswordSettings } from "@/components/password-settings";
 import { ResetStreak } from "@/components/reset-streak";
 import { StreakCard } from "@/components/streak-card";
 import { StreakVisibility } from "@/components/streak-visibility";
@@ -22,6 +23,8 @@ export default async function AjustesPage() {
     todayISOInTZ(await getTimeZone()),
     profile?.streak_reset_at ?? null
   );
+  const providers = (user.app_metadata?.providers as string[] | undefined) ?? [];
+  const hasPassword = providers.includes("email");
 
   return (
     <>
@@ -52,6 +55,9 @@ export default async function AjustesPage() {
       </FadeIn>
       <FadeIn delay={0.1}>
         <CurrencySettings current={profile?.currency ?? "COP"} />
+      </FadeIn>
+      <FadeIn delay={0.12}>
+        <PasswordSettings hasPassword={hasPassword} />
       </FadeIn>
       <FadeIn delay={0.15}>
         <ResetStreak />

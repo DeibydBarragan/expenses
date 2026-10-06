@@ -33,10 +33,18 @@ export default async function InicioPage() {
     .filter((e) => e.date === todayStr)
     .reduce((s, e) => s + Number(e.amount), 0);
 
-  const byCat = new Map<string, { name: string; color: string; total: number; n: number }>();
+  const byCat = new Map<string, { id: string | null; name: string; color: string; icon: string; total: number; n: number }>();
   for (const e of monthExpenses) {
-    const key = e.categories?.name ?? t.list.uncategorized;
-    const prev = byCat.get(key) ?? { name: key, color: e.categories?.color ?? "#64748B", total: 0, n: 0 };
+    const id = e.category_id;
+    const key = id ?? "__uncategorized";
+    const prev = byCat.get(key) ?? {
+      id,
+      name: e.categories?.name ?? t.list.uncategorized,
+      color: e.categories?.color ?? "#64748B",
+      icon: e.categories?.icon ?? "other",
+      total: 0,
+      n: 0,
+    };
     prev.total += Number(e.amount);
     prev.n += 1;
     byCat.set(key, prev);
@@ -96,7 +104,7 @@ export default async function InicioPage() {
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-muted">{t.home.recent}</h2>
-        <ExpenseList expenses={recent} currency={currency} lang={lang} t={t} />
+        <ExpenseList expenses={recent} categories={categories} currency={currency} lang={lang} t={t} />
       </section>
     </>
   );

@@ -1,14 +1,17 @@
 import { redirect } from "next/navigation";
 import { FadeIn } from "@/components/animated";
 import { CategoryManager } from "@/components/category-manager";
-import { getCategories, getSession } from "@/lib/queries";
+import { getCategories, getProfile, getSession } from "@/lib/queries";
 import { getDictionary } from "@/lib/i18n/server";
 
 export default async function CategoriasPage() {
   const { user } = await getSession();
   if (!user) redirect("/login");
   const { t } = await getDictionary();
-  const categories = await getCategories();
+  const [categories, profile] = await Promise.all([
+    getCategories(),
+    getProfile(user.id),
+  ]);
 
   return (
     <>
@@ -18,7 +21,10 @@ export default async function CategoriasPage() {
           <p className="mt-1 text-sm text-muted">{t.categories.subtitle}</p>
         </section>
       </FadeIn>
-      <CategoryManager categories={categories} />
+      <CategoryManager
+        categories={categories}
+        currency={profile?.currency ?? "COP"}
+      />
     </>
   );
 }

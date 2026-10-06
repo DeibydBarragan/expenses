@@ -3,16 +3,19 @@ import { deleteExpense } from "@/actions/expenses";
 import { Stagger, StaggerItem } from "@/components/animated";
 import { CategoryIcon } from "@/components/category-icon";
 import { DeleteButton } from "@/components/delete-button";
+import { ExpenseEditModal } from "@/components/expense-edit-modal";
 import { formatDateISO, formatMoney } from "@/lib/currency";
 import type { Dictionary, Lang } from "@/lib/i18n/dictionaries";
 
 export function ExpenseList({
   expenses,
+  categories,
   currency,
   lang,
   t,
 }: {
   expenses: import("@/lib/types").Expense[];
+  categories: import("@/lib/types").Category[];
   currency: string;
   lang: Lang;
   t: Dictionary;
@@ -62,6 +65,12 @@ export function ExpenseList({
                 <span className="shrink-0 text-[15px] font-bold tabular-nums">
                   {formatMoney(Number(e.amount), currency, lang)}
                 </span>
+                <ExpenseEditModal
+                  key={`${e.id}-${e.date}-${e.amount}-${e.category_id}-${e.note}`}
+                  expense={e}
+                  categories={categories}
+                  currency={currency}
+                />
                 <DeleteButton
                   action={deleteExpense}
                   id={e.id}

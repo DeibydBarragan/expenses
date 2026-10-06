@@ -21,3 +21,35 @@ export type Expense = {
   category_id: string | null;
   categories: Category | null;
 };
+
+export type ExpenseSortBy = "date" | "amount" | "created_at";
+export type ExpenseSortDir = "asc" | "desc";
+
+export type ExpensesFilter = {
+  /** Texto libre: coincide con `note` (ilike, insensible a mayúsculas). */
+  search?: string;
+  /**
+   * Filtro por categoría:
+   * - `undefined` = todas
+   * - `null` = solo sin categoría
+   * - `string` = solo esa categoría
+   */
+  categoryId?: string | null;
+  /** ISO `YYYY-MM-DD` inclusivo. */
+  from?: string;
+  /** ISO `YYYY-MM-DD` inclusivo. */
+  to?: string;
+  sortBy?: ExpenseSortBy;
+  sortDir?: ExpenseSortDir;
+  /** 1-indexed. */
+  page?: number;
+  pageSize?: number;
+};
+
+export type ExpensesPage = {
+  data: Expense[];
+  count: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};

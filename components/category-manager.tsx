@@ -16,22 +16,45 @@ import {
 import { createCategory, deleteCategory, updateCategory } from "@/actions/categories";
 import { Stagger, StaggerItem } from "@/components/animated";
 import { CategoryIcon } from "@/components/category-icon";
+import { CategoryExpensesModal, type ModalRow } from "@/components/category-expenses-modal";
 import { DeleteButton } from "@/components/delete-button";
 import { IconPicker } from "@/components/icon-picker";
 import { useLang } from "@/components/language";
 import type { Category } from "@/lib/types";
 
-export function CategoryManager({ categories }: { categories: Category[] }) {
-  const { t } = useLang();
+export function CategoryManager({
+  categories,
+  currency,
+}: {
+  categories: Category[];
+  currency: string;
+}) {
+  const { lang, t } = useLang();
   const [editing, setEditing] = useState<Category | null>(null);
   const editModal = useOverlayState();
   const createModal = useOverlayState();
+  const detailModal = useOverlayState();
+  const [selected, setSelected] = useState<Category | null>(null);
   const [formKey, setFormKey] = useState(0);
 
   function openEdit(c: Category) {
     setEditing(c);
     editModal.open();
   }
+
+  function openDetails(c: Category) {
+    setSelected(c);
+    detailModal.open();
+  }
+
+  const selectedRow: ModalRow | null = selected
+    ? {
+        id: selected.id,
+        name: selected.name,
+        color: selected.color,
+        icon: selected.icon,
+      }
+    : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -49,7 +72,20 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
         >
           {categories.map((c) => (
             <StaggerItem key={c.id}>
-              <Card className="h-full">
+              <Card
+                className="h-full cursor-pointer transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2"
+                role="button"
+                tabIndex={0}
+                aria-label={t.reports.viewDetails(c.name)}
+                title={t.reports.viewDetails(c.name)}
+                onClick={() => openDetails(c)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openDetails(c);
+                  }
+                }}
+              >
                 <Card.Content className="relative flex h-full flex-col items-center gap-1.5 px-3 py-4 text-center">
                 <span
                   className="flex h-10 w-10 items-center justify-center rounded-full"
@@ -58,7 +94,7 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
                   <CategoryIcon icon={c.icon} size={19} />
                 </span>
                 <span className="w-full truncate text-sm font-medium">{c.name}</span>
-                <span className="absolute left-1 top-1">
+                <span className="absolute left-1 top-1" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -69,7 +105,7 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
                     <Pencil size={13} />
                   </Button>
                 </span>
-                <span className="absolute right-1 top-1">
+                <span className="absolute right-1 top-1" onClick={(e) => e.stopPropagation()}>
                   <DeleteButton
                     action={deleteCategory}
                     id={c.id}
@@ -118,6 +154,20 @@ export function CategoryManager({ categories }: { categories: Category[] }) {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+      {categories.length > 0 && (
+        <p className="text-center text-xs text-muted">{t.reports.detailsHint}</p>
+      )}
+
+      <CategoryExpensesModal
+        state={detailModal}
+        row={selectedRow}
+        scope={{ kind: "range" }}
+        categories={categories}
+        currency={currency}
+        lang={lang}
+        emptyText={t.reports.noRecent}
+      />
     </div>
   );
 }

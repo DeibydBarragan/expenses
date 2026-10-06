@@ -4,12 +4,15 @@ import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Chip } from "@heroui/react";
 import { Stagger, StaggerItem } from "@/components/animated";
+import { useLang } from "@/components/language";
 import { formatMoney } from "@/lib/currency";
 import type { Lang } from "@/lib/i18n/dictionaries";
 
 export type PieSlice = {
+  id: string | null;
   name: string;
   color: string;
+  icon: string;
   total: number;
   n: number;
 };
@@ -33,26 +36,30 @@ export function PieChart({
   currency,
   lang,
   label,
+  onSelect,
 }: {
   slices: PieSlice[];
   total: number;
   currency: string;
   lang: Lang;
   label: string;
+  onSelect?: (slice: PieSlice) => void;
 }) {
+  const { t } = useLang();
   const [active, setActive] = useState<number | null>(null);
   const [chartHover, setChartHover] = useState(false);
   const [cursor, setCursor] = useState({ x: 0, y: 0 });
   const boxRef = useRef<HTMLDivElement>(null);
 
-  const segs = slices.reduce<
-    { name: string; color: string; total: number; n: number; start: number; end: number; frac: number }[]
-  >((out, s) => {
-    const prevEnd = out.length ? out[out.length - 1].end : -Math.PI / 2;
-    const frac = total ? s.total / total : 0;
-    const start = prevEnd;
-    return [...out, { ...s, start, end: start + frac * Math.PI * 2, frac }];
-  }, []);
+  const segs = slices.reduce<(PieSlice & { start: number; end: number; frac: number })[]>(
+    (out, s) => {
+      const prevEnd = out.length ? out[out.length - 1].end : -Math.PI / 2;
+      const frac = total ? s.total / total : 0;
+      const start = prevEnd;
+      return [...out, { ...s, start, end: start + frac * Math.PI * 2, frac }];
+    },
+    []
+  );
 
   function trackCursor(e: React.MouseEvent) {
     const box = boxRef.current?.getBoundingClientRect();
@@ -84,20 +91,32 @@ export function PieChart({
           {segs.map((s, i) => {
             const dimmed = active !== null && active !== i;
             const full = s.frac >= 0.9999;
+            const key = s.id ?? "__uncategorized";
             const common = {
               fill: s.color,
               opacity: dimmed ? 0.3 : 1,
               style: { transition: "opacity 0.15s ease", cursor: "pointer" },
               onMouseEnter: () => setActive(i),
-              onClick: () => setActive(active === i ? null : i),
+              onClick: () => {
+                setActive(i);
+                onSelect?.(s);
+              },
+              onKeyDown: (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelect?.(s);
+                }
+              },
               onFocus: () => setActive(i),
               onBlur: () => setActive(null),
               tabIndex: 0,
+              role: "button" as const,
+              "aria-label": onSelect ? t.reports.viewDetails(s.name) : s.name,
             };
             return full ? (
-              <circle key={s.name} cx={CX} cy={CY} r={R} {...common} />
+              <circle key={key} cx={CX} cy={CY} r={R} {...common} />
             ) : (
-              <path key={s.name} d={wedgePath(s.start, s.end)} {...common} />
+              <path key={key} d={wedgePath(s.start, s.end)} {...common} />
             );
           })}
         </svg>
@@ -121,22 +140,40 @@ export function PieChart({
         {segs.map((s, i) => {
           const pct = total ? Math.round((s.total / total) * 100) : 0;
           const dimmed = active !== null && active !== i;
+          const key = s.id ?? "__uncategorized";
           return (
-            <StaggerItem key={s.name}>
+            <StaggerItem key={key}>
               <div
-                className="flex items-center justify-between gap-2 text-sm"
+                className={onSelect ? "cursor-pointer rounded-lg" : undefined}
+                role={onSelect ? "button" : undefined}
+                tabIndex={onSelect ? 0 : undefined}
+                aria-label={onSelect ? t.reports.viewDetails(s.name) : undefined}
+                title={onSelect ? t.reports.viewDetails(s.name) : undefined}
                 style={{ opacity: dimmed ? 0.45 : 1, transition: "opacity 0.15s ease" }}
                 onMouseEnter={() => setActive(i)}
                 onMouseLeave={() => setActive(null)}
+                onClick={onSelect ? () => onSelect(s) : undefined}
+                onKeyDown={
+                  onSelect
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelect(s);
+                        }
+                      }
+                    : undefined
+                }
               >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
-                  <span className="truncate">{s.name}</span>
-                  <Chip size="sm">{s.n}</Chip>
-                </span>
-                <span className="shrink-0 tabular-nums">
-                  <span className="font-medium">{formatMoney(s.total, currency, lang)}</span>{" "}
-                  <span className="text-muted">{pct}%</span>
+                <span className="flex items-center justify-between gap-2 text-sm">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
+                    <span className="truncate">{s.name}</span>
+                    <Chip size="sm">{s.n}</Chip>
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    <span className="font-medium">{formatMoney(s.total, currency, lang)}</span>{" "}
+                    <span className="text-muted">{pct}%</span>
+                  </span>
                 </span>
               </div>
             </StaggerItem>

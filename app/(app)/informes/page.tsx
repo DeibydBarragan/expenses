@@ -4,7 +4,7 @@ import { FadeIn } from "@/components/animated";
 import { CategoryChart } from "@/components/category-chart";
 import { MonthPager } from "@/components/month-pager";
 import { formatMonthYear, formatMoney } from "@/lib/currency";
-import { getMonthExpenses, getProfile, getSession } from "@/lib/queries";
+import { getCategories, getMonthExpenses, getProfile, getSession } from "@/lib/queries";
 import { getDictionary } from "@/lib/i18n/server";
 
 export default async function InformesPage({
@@ -23,17 +23,22 @@ export default async function InformesPage({
   const year = Number(sp.y ?? now.getFullYear());
   const month = Number(sp.m ?? now.getMonth() + 1);
 
-  const expenses = await getMonthExpenses(year, month);
+  const [expenses, categories] = await Promise.all([
+    getMonthExpenses(year, month),
+    getCategories(),
+  ]);
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const count = expenses.length;
   const daysInMonth = new Date(year, month, 0).getDate();
   const dayAvg = total / daysInMonth;
 
-  const byCat = new Map<string, { name: string; color: string; icon: string; total: number; n: number }>();
+  const byCat = new Map<string, { id: string | null; name: string; color: string; icon: string; total: number; n: number }>();
   for (const e of expenses) {
-    const key = e.categories?.name ?? t.list.uncategorized;
+    const id = e.category_id;
+    const key = id ?? "__uncategorized";
     const prev = byCat.get(key) ?? {
-      name: key,
+      id,
+      name: e.categories?.name ?? t.list.uncategorized,
       color: e.categories?.color ?? "#64748B",
       icon: e.categories?.icon ?? "other",
       total: 0,
@@ -101,6 +106,8 @@ export default async function InformesPage({
           lang={lang}
           defaultView="pie"
           storageKey="expenses-chart-informes"
+          scope={{ kind: "month", year, month }}
+          categories={categories}
         />
       </FadeIn>
     </>

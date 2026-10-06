@@ -12,6 +12,7 @@ export function DeleteButton({
   cancelLabel,
   confirmLabel,
   ariaLabel,
+  onDone,
 }: {
   action: (formData: FormData) => void;
   id: string;
@@ -20,6 +21,8 @@ export function DeleteButton({
   cancelLabel: string;
   confirmLabel: string;
   ariaLabel: string;
+  /** Se llama tras borrar (p. ej. para refrescar una lista local). */
+  onDone?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -35,6 +38,7 @@ export function DeleteButton({
               function handle(fd: FormData) {
                 startTransition(async () => {
                   await action(fd);
+                  onDone?.();
                   close();
                 });
               }

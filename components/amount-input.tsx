@@ -5,19 +5,32 @@ import { Input, Label, TextField } from "@heroui/react";
 import { currencyMeta, formatAmountInput } from "@/lib/currency";
 import { useLang } from "@/components/language";
 
+function toRawAmount(value: number | string | undefined, zero: boolean): string {
+  if (value === undefined || value === "") return "";
+  const num = typeof value === "number" ? value : Number(String(value).replace(/,/g, "."));
+  if (!Number.isFinite(num)) return "";
+  return zero ? String(Math.round(num)) : String(num);
+}
+
 export function AmountInput({
   label,
   placeholder,
   currency,
+  defaultValue,
 }: {
   label: string;
   placeholder: string;
   currency: string;
+  /** Para edición: monto precargado (number o numeric string de la BD). */
+  defaultValue?: number | string;
 }) {
   const { lang } = useLang();
-  const [display, setDisplay] = useState("");
-  const [raw, setRaw] = useState("");
   const zero = currencyMeta(currency).zeroDecimals;
+  const [display, setDisplay] = useState(() => {
+    const raw = toRawAmount(defaultValue, zero);
+    return raw === "" ? "" : formatAmountInput(raw, currency, lang);
+  });
+  const [raw, setRaw] = useState(() => toRawAmount(defaultValue, zero));
 
   function handleChange(value: string) {
     const cleaned = value.replace(/[^0-9.,]/g, "");

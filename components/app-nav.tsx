@@ -34,7 +34,7 @@ export function AppNav({ name, onSignOut }: { name?: string | null; onSignOut: (
           </Button>
         </div>
       </div>
-      <div className="mx-auto max-w-xl overflow-x-auto px-5 pb-3">
+      <div className="mx-auto max-w-xl overflow-x-auto px-5 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Tabs selectedKey={pathname} onSelectionChange={(key) => router.push(String(key))}>
           <Tabs.List aria-label={t.nav.navLabel}>
             {LINKS.map((l) => (

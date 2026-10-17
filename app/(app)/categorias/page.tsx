@@ -9,7 +9,7 @@ export default async function CategoriasPage() {
   if (!user) redirect("/login");
   const { t } = await getDictionary();
   const [categories, profile] = await Promise.all([
-    getCategories(),
+    getCategories("name"),
     getProfile(user.id),
   ]);
 

@@ -61,6 +61,7 @@ const es = {
     saving: "Guardando…",
     name: "Nombre",
     namePh: "Ej. Café con Ana",
+    suggestions: "Sugerencias",
   },
   list: {
     emptyTitle: "Sin gastos por aquí",
@@ -269,6 +270,7 @@ const en: Dictionary = {
     saving: "Saving…",
     name: "Name",
     namePh: "E.g. Coffee with Ana",
+    suggestions: "Suggestions",
   },
   list: {
     emptyTitle: "No expenses here",

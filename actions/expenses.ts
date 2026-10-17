@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { getExpensesPaginated } from "@/lib/queries";
+import { getExpensesPaginated, getExpenseSuggestions } from "@/lib/queries";
 import { dictionaries } from "@/lib/i18n/dictionaries";
 import { getLang } from "@/lib/i18n/server";
 
@@ -141,4 +141,8 @@ export async function deleteExpense(formData: FormData): Promise<void> {
   revalidatePath("/inicio");
   revalidatePath("/gastos");
   revalidatePath("/informes");
+}
+
+export async function getExpenseNameSuggestionsAction() {
+  return getExpenseSuggestions();
 }

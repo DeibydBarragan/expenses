@@ -74,23 +74,23 @@ export default async function InformesPage({
       </FadeIn>
 
       <FadeIn delay={0.05}>
-        <section className="grid grid-cols-3 gap-3">
-        <Card>
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Card className="col-span-2 sm:col-span-1">
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">{t.reports.total}</p>
-            <p className="mt-1 font-semibold tabular-nums">{formatMoney(total, currency, lang)}</p>
+            <p className="text-xs text-muted truncate">{t.reports.total}</p>
+            <p className="mt-1 text-xl sm:text-lg font-semibold tabular-nums truncate">{formatMoney(total, currency, lang)}</p>
           </Card.Content>
         </Card>
-        <Card>
+        <Card className="col-span-1">
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">{t.reports.num}</p>
-            <p className="mt-1 font-semibold tabular-nums">{count}</p>
+            <p className="text-xs text-muted truncate">{t.reports.num}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums">{count}</p>
           </Card.Content>
         </Card>
-        <Card>
+        <Card className="col-span-1">
           <Card.Content className="p-4">
-            <p className="text-xs text-muted">{t.reports.dayAvg}</p>
-            <p className="mt-1 font-semibold tabular-nums">{formatMoney(dayAvg, currency, lang)}</p>
+            <p className="text-xs text-muted truncate">{t.reports.dayAvg}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums truncate">{formatMoney(dayAvg, currency, lang)}</p>
           </Card.Content>
         </Card>
       </section>

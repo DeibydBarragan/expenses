@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Label, ListBox, SearchField, Select } from "@heroui/react";
 import { CategoryIcon } from "@/components/category-icon";
 import { useLang } from "@/components/language";
@@ -50,6 +50,17 @@ export function CategoryAutocomplete({
 
   const matches = (text: string) => (q.trim() === "" ? true : norm(text).includes(norm(q.trim())));
 
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => {
+      const uA = a.usage_count;
+      const uB = b.usage_count;
+      if (uA !== undefined && uB !== undefined && uB !== uA) {
+        return uB - uA;
+      }
+      return 0;
+    });
+  }, [categories]);
+
   return (
     <Select
       fullWidth
@@ -92,7 +103,7 @@ export function CategoryAutocomplete({
               <ListBox.ItemIndicator />
             </ListBox.Item>
           )}
-          {categories
+          {sortedCategories
             .filter((c) => matches(c.name))
             .map((c) => (
               <ListBox.Item key={c.id} id={c.id} textValue={c.name}>

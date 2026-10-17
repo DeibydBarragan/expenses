@@ -90,11 +90,11 @@ export function CategoryChart({
   return (
     <>
     <Card>
-      <Card.Content className="flex flex-col gap-3 p-5">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-medium text-muted">{title}</h2>
-          <div className="flex items-center gap-2">
-            {totalText && <p className="font-semibold tabular-nums">{totalText}</p>}
+      <Card.Content className="flex flex-col gap-3 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-muted whitespace-nowrap">{title}</h2>
+          <div className="flex items-center gap-2 shrink-0">
+            {totalText && <p className="font-semibold tabular-nums text-sm sm:text-base">{totalText}</p>}
             <div
               className="flex items-center gap-0.5 rounded-full bg-default p-0.5"
               role="group"
@@ -134,12 +134,12 @@ export function CategoryChart({
               if (!clickable) {
                 return (
                   <div key={key}>
-                    <div className="mb-1 flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
-                        {c.name}
+                    <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                        <span className="truncate">{c.name}</span>
                       </span>
-                      <span className="font-medium tabular-nums">
+                      <span className="shrink-0 font-medium tabular-nums ml-2">
                         {formatMoney(c.total, currency, lang)}
                       </span>
                     </div>
@@ -167,12 +167,12 @@ export function CategoryChart({
                   }}
                   className="cursor-pointer rounded-xl transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
-                      {c.name}
+                  <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                      <span className="truncate">{c.name}</span>
                     </span>
-                    <span className="font-medium tabular-nums">
+                    <span className="shrink-0 font-medium tabular-nums ml-2">
                       {formatMoney(c.total, currency, lang)}
                     </span>
                   </div>

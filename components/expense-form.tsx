@@ -14,13 +14,25 @@ import {
 import { createExpense } from "@/actions/expenses";
 import { AmountInput } from "@/components/amount-input";
 import { CategoryAutocomplete } from "@/components/category-autocomplete";
+import { ExpenseNameInput } from "@/components/expense-name-input";
 import { useLang } from "@/components/language";
-import type { Category } from "@/lib/types";
+import type { Category, ExpenseSuggestion } from "@/lib/types";
 
-export function ExpenseForm({ categories, currency }: { categories: Category[]; currency: string }) {
+export function ExpenseForm({
+  categories,
+  currency,
+  suggestions,
+}: {
+  categories: Category[];
+  currency: string;
+  suggestions?: ExpenseSuggestion[];
+}) {
   const { t } = useLang();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const [selectedCategory, setSelectedCategory] = useState<string | number | null>(null);
+  const [note, setNote] = useState("");
+
   // Fecha LOCAL del dispositivo (toISOString usa UTC y adelanta el día en la noche)
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -35,6 +47,16 @@ export function ExpenseForm({ categories, currency }: { categories: Category[]; 
         <Modal.Container placement="center">
           <Modal.Dialog>
             {({ close }) => {
+              function handleSuggestionSelect(sug: ExpenseSuggestion) {
+                setNote(sug.name);
+                if (sug.categoryId && (!selectedCategory || selectedCategory === "none")) {
+                  const exists = categories.some((c) => c.id === sug.categoryId);
+                  if (exists) {
+                    setSelectedCategory(sug.categoryId);
+                  }
+                }
+              }
+
               function handle(fd: FormData) {
                 startTransition(async () => {
                   setError(undefined);
@@ -42,6 +64,8 @@ export function ExpenseForm({ categories, currency }: { categories: Category[]; 
                   if (res?.error) setError(res.error);
                   else {
                     toast.success(t.toasts.expenseSaved);
+                    setNote("");
+                    setSelectedCategory(null);
                     close();
                   }
                 });
@@ -67,11 +91,20 @@ export function ExpenseForm({ categories, currency }: { categories: Category[]; 
                         placeholder={t.expense.choose}
                         name="category_id"
                         isRequired
+                        selectedKey={selectedCategory ? String(selectedCategory) : null}
+                        onSelectionChange={(key) => setSelectedCategory(key)}
                       />
-                      <TextField fullWidth isRequired name="note" variant="secondary">
-                        <Label>{t.expense.name}</Label>
-                        <Input maxLength={80} placeholder={t.expense.namePh} autoComplete="off" />
-                      </TextField>
+                      <ExpenseNameInput
+                        label={t.expense.name}
+                        placeholder={t.expense.namePh}
+                        value={note}
+                        onChange={setNote}
+                        onSelectSuggestion={handleSuggestionSelect}
+                        suggestions={suggestions}
+                        categories={categories}
+                        name="note"
+                        isRequired
+                      />
                       {error && (
                         <p aria-live="polite" className="text-sm text-danger">
                           {error}

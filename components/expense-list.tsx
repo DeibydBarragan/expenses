@@ -13,12 +13,14 @@ export function ExpenseList({
   currency,
   lang,
   t,
+  suggestions,
 }: {
   expenses: import("@/lib/types").Expense[];
   categories: import("@/lib/types").Category[];
   currency: string;
   lang: Lang;
   t: Dictionary;
+  suggestions?: import("@/lib/types").ExpenseSuggestion[];
 }) {
   if (expenses.length === 0) {
     return (
@@ -70,6 +72,7 @@ export function ExpenseList({
                   expense={e}
                   categories={categories}
                   currency={currency}
+                  suggestions={suggestions}
                 />
                 <DeleteButton
                   action={deleteExpense}

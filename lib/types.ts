@@ -11,6 +11,13 @@ export type Category = {
   name: string;
   icon: string;
   color: string;
+  usage_count?: number;
+};
+
+export type ExpenseSuggestion = {
+  name: string;
+  categoryId?: string | null;
+  count?: number;
 };
 
 export type Expense = {

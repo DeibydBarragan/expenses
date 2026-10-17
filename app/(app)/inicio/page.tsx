@@ -6,7 +6,7 @@ import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { StreakCard } from "@/components/streak-card";
 import { formatMoney } from "@/lib/currency";
-import { getCategories, getMonthExpenses, getProfile, getRecentExpenses, getSession, getStreakActivity } from "@/lib/queries";
+import { getCategories, getExpenseSuggestions, getMonthExpenses, getProfile, getRecentExpenses, getSession, getStreakActivity } from "@/lib/queries";
 import { computeStreak } from "@/lib/streak";
 import { getTimeZone, todayISOInTZ } from "@/lib/time";
 import { getDictionary } from "@/lib/i18n/server";
@@ -19,11 +19,12 @@ export default async function InicioPage() {
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
   const now = new Date();
-  const [monthExpenses, recent, categories, activity] = await Promise.all([
+  const [monthExpenses, recent, categories, activity, suggestions] = await Promise.all([
     getMonthExpenses(now.getFullYear(), now.getMonth() + 1),
     getRecentExpenses(5),
     getCategories(),
     getStreakActivity(),
+    getExpenseSuggestions(),
   ]);
   const todayStr = todayISOInTZ(await getTimeZone());
   const streak = computeStreak(activity, todayStr, profile?.streak_reset_at ?? null);
@@ -83,7 +84,7 @@ export default async function InicioPage() {
         </section>
       </FadeIn>
 
-      <ExpenseForm categories={categories} currency={currency} />
+      <ExpenseForm categories={categories} currency={currency} suggestions={suggestions} />
 
       {profile?.show_streak !== false && (
         <FadeIn delay={0.05}>
@@ -104,7 +105,14 @@ export default async function InicioPage() {
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-muted">{t.home.recent}</h2>
-        <ExpenseList expenses={recent} categories={categories} currency={currency} lang={lang} t={t} />
+        <ExpenseList
+          expenses={recent}
+          categories={categories}
+          currency={currency}
+          lang={lang}
+          t={t}
+          suggestions={suggestions}
+        />
       </section>
     </>
   );

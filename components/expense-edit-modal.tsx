@@ -14,8 +14,9 @@ import {
 import { updateExpense } from "@/actions/expenses";
 import { AmountInput } from "@/components/amount-input";
 import { CategoryAutocomplete } from "@/components/category-autocomplete";
+import { ExpenseNameInput } from "@/components/expense-name-input";
 import { useLang } from "@/components/language";
-import type { Category, Expense } from "@/lib/types";
+import type { Category, Expense, ExpenseSuggestion } from "@/lib/types";
 
 /**
  * Botón editar + modal con el formulario precargado.
@@ -25,17 +26,23 @@ export function ExpenseEditModal({
   expense,
   categories,
   currency,
+  suggestions,
   onSaved,
 }: {
   expense: Expense;
   categories: Category[];
   currency: string;
+  suggestions?: ExpenseSuggestion[];
   /** Se llama tras guardar (p. ej. para refrescar una lista local). */
   onSaved?: () => void;
 }) {
   const { t } = useLang();
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const [selectedCategory, setSelectedCategory] = useState<string | number | null>(
+    expense.category_id ?? null
+  );
+  const [note, setNote] = useState(expense.note ?? "");
 
   return (
     <Modal>
@@ -46,6 +53,16 @@ export function ExpenseEditModal({
         <Modal.Container placement="center">
           <Modal.Dialog>
             {({ close }) => {
+              function handleSuggestionSelect(sug: ExpenseSuggestion) {
+                setNote(sug.name);
+                if (sug.categoryId && (!selectedCategory || selectedCategory === "none")) {
+                  const exists = categories.some((c) => c.id === sug.categoryId);
+                  if (exists) {
+                    setSelectedCategory(sug.categoryId);
+                  }
+                }
+              }
+
               function handle(fd: FormData) {
                 startTransition(async () => {
                   setError(undefined);
@@ -85,12 +102,20 @@ export function ExpenseEditModal({
                         placeholder={t.expense.choose}
                         name="category_id"
                         isRequired
-                        defaultSelectedKey={expense.category_id ?? undefined}
+                        selectedKey={selectedCategory ? String(selectedCategory) : null}
+                        onSelectionChange={(k) => setSelectedCategory(k)}
                       />
-                      <TextField fullWidth isRequired name="note" variant="secondary" defaultValue={expense.note ?? ""}>
-                        <Label>{t.expense.name}</Label>
-                        <Input maxLength={80} placeholder={t.expense.namePh} autoComplete="off" />
-                      </TextField>
+                      <ExpenseNameInput
+                        label={t.expense.name}
+                        placeholder={t.expense.namePh}
+                        value={note}
+                        onChange={setNote}
+                        onSelectSuggestion={handleSuggestionSelect}
+                        suggestions={suggestions}
+                        categories={categories}
+                        name="note"
+                        isRequired
+                      />
                       {error && (
                         <p aria-live="polite" className="text-sm text-danger">
                           {error}

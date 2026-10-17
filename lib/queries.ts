@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type {
   Category,
   Expense,
+  ExpenseSuggestion,
   ExpensesFilter,
   ExpensesPage,
   ExpenseSortBy,
@@ -59,10 +60,102 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return data as Profile | null;
 }
 
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(
+  orderBy: "usage" | "name" = "usage"
+): Promise<Category[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("categories").select("id, name, icon, color").order("name");
-  return (data ?? []) as Category[];
+
+  if (orderBy === "name") {
+    const { data } = await supabase.from("categories").select("id, name, icon, color").order("name");
+    return (data ?? []) as Category[];
+  }
+
+  // Ordenar por uso: intentamos traer categories con el count de expenses
+  const { data: catWithCount, error } = await supabase
+    .from("categories")
+    .select("id, name, icon, color, expenses(count)");
+
+  if (!error && Array.isArray(catWithCount)) {
+    type CategoryCountRow = {
+      id: string;
+      name: string;
+      icon: string;
+      color: string;
+      expenses?: { count?: number }[];
+    };
+    return (catWithCount as unknown as CategoryCountRow[])
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        color: c.color,
+        usage_count: Number(c.expenses?.[0]?.count ?? 0),
+      }))
+      .sort((a, b) => {
+        if ((b.usage_count ?? 0) !== (a.usage_count ?? 0)) {
+          return (b.usage_count ?? 0) - (a.usage_count ?? 0);
+        }
+        return a.name.localeCompare(b.name);
+      });
+  }
+
+  // Fallback: consultar categories y agrupar por category_id de expenses
+  const [{ data: categories }, { data: expRows }] = await Promise.all([
+    supabase.from("categories").select("id, name, icon, color").order("name"),
+    supabase.from("expenses").select("category_id"),
+  ]);
+
+  if (!categories) return [];
+
+  const counts: Record<string, number> = {};
+  for (const e of (expRows ?? []) as { category_id: string | null }[]) {
+    if (e.category_id) {
+      counts[e.category_id] = (counts[e.category_id] || 0) + 1;
+    }
+  }
+
+  return (categories as Category[])
+    .map((c) => ({
+      ...c,
+      usage_count: counts[c.id] || 0,
+    }))
+    .sort((a, b) => {
+      const diff = (b.usage_count || 0) - (a.usage_count || 0);
+      if (diff !== 0) return diff;
+      return a.name.localeCompare(b.name);
+    });
+}
+
+export async function getExpenseSuggestions(): Promise<ExpenseSuggestion[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("note, category_id")
+    .not("note", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(300);
+
+  if (error || !data || data.length === 0) {
+    return [];
+  }
+
+  const map = new Map<string, { name: string; categoryId: string | null; count: number }>();
+  for (const row of data as { note: string | null; category_id: string | null }[]) {
+    const raw = (row.note ?? "").trim();
+    if (!raw) continue;
+    const key = raw.toLowerCase();
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += 1;
+      if (!existing.categoryId && row.category_id) {
+        existing.categoryId = row.category_id;
+      }
+    } else {
+      map.set(key, { name: raw, categoryId: row.category_id, count: 1 });
+    }
+  }
+
+  return [...map.values()].sort((a, b) => b.count - a.count);
 }
 
 export async function getRecentExpenses(limit = 30): Promise<Expense[]> {

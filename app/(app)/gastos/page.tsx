@@ -7,6 +7,7 @@ import { ExpensesPagination } from "@/components/expenses-pagination";
 import {
   DEFAULT_EXPENSES_PAGE_SIZE,
   getCategories,
+  getExpenseSuggestions,
   getExpensesPaginated,
   getProfile,
   getSession,
@@ -35,8 +36,11 @@ export default async function GastosPage({
   const { user } = await getSession();
   if (!user) redirect("/login");
   const { lang, t } = await getDictionary();
-  const profile = await getProfile(user.id);
-  const categories = await getCategories();
+  const [profile, categories, suggestions] = await Promise.all([
+    getProfile(user.id),
+    getCategories(),
+    getExpenseSuggestions(),
+  ]);
 
   const sp = await searchParams;
   const q = (sp.q ?? "").trim().slice(0, 80);
@@ -91,7 +95,11 @@ export default async function GastosPage({
           <p className="mt-1 text-sm text-muted">{t.list.allSub}</p>
         </section>
       </FadeIn>
-      <ExpenseForm categories={categories} currency={profile?.currency ?? "COP"} />
+      <ExpenseForm
+        categories={categories}
+        currency={profile?.currency ?? "COP"}
+        suggestions={suggestions}
+      />
       <ExpensesToolbar
         categories={categories}
         initial={{ q, cat, from: from ?? "", to: to ?? "", sortKey }}
@@ -99,7 +107,14 @@ export default async function GastosPage({
       <p className="text-sm text-muted tabular-nums" aria-live="polite">
         {t.reports.count(count)}
       </p>
-      <ExpenseList expenses={data} categories={categories} currency={profile?.currency ?? "COP"} lang={lang} t={t} />
+      <ExpenseList
+        expenses={data}
+        categories={categories}
+        currency={profile?.currency ?? "COP"}
+        lang={lang}
+        t={t}
+        suggestions={suggestions}
+      />
       <ExpensesPagination page={page} totalPages={totalPages} params={base} />
     </>
   );

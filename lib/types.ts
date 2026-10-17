@@ -17,6 +17,7 @@ export type Category = {
 export type ExpenseSuggestion = {
   name: string;
   categoryId?: string | null;
+  amount?: number;
   count?: number;
 };
 

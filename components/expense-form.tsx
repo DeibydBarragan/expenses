@@ -32,6 +32,7 @@ export function ExpenseForm({
   const [pending, startTransition] = useTransition();
   const [selectedCategory, setSelectedCategory] = useState<string | number | null>(null);
   const [note, setNote] = useState("");
+  const [amount, setAmount] = useState<number | string | undefined>(undefined);
 
   // Fecha LOCAL del dispositivo (toISOString usa UTC y adelanta el día en la noche)
   const now = new Date();
@@ -49,11 +50,14 @@ export function ExpenseForm({
             {({ close }) => {
               function handleSuggestionSelect(sug: ExpenseSuggestion) {
                 setNote(sug.name);
-                if (sug.categoryId && (!selectedCategory || selectedCategory === "none")) {
+                if (sug.categoryId) {
                   const exists = categories.some((c) => c.id === sug.categoryId);
                   if (exists) {
                     setSelectedCategory(sug.categoryId);
                   }
+                }
+                if (sug.amount !== undefined && sug.amount > 0) {
+                  setAmount(sug.amount);
                 }
               }
 
@@ -66,6 +70,7 @@ export function ExpenseForm({
                     toast.success(t.toasts.expenseSaved);
                     setNote("");
                     setSelectedCategory(null);
+                    setAmount(undefined);
                     close();
                   }
                 });
@@ -78,13 +83,20 @@ export function ExpenseForm({
                   </Modal.Header>
                   <Modal.Body>
                     <form action={handle} className="flex flex-col gap-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <AmountInput label={t.expense.amount} placeholder="25.000" currency={currency} />
-                        <TextField fullWidth isRequired name="date" type="date" defaultValue={today} variant="secondary">
-                          <Label>{t.expense.date}</Label>
-                          <Input />
-                        </TextField>
-                      </div>
+                      {/* 1. Nombre de primero para autocompletar categoría y monto */}
+                      <ExpenseNameInput
+                        label={t.expense.name}
+                        placeholder={t.expense.namePh}
+                        value={note}
+                        onChange={setNote}
+                        onSelectSuggestion={handleSuggestionSelect}
+                        suggestions={suggestions}
+                        categories={categories}
+                        currency={currency}
+                        name="note"
+                        isRequired
+                      />
+                      {/* 2. Categoría */}
                       <CategoryAutocomplete
                         categories={categories}
                         label={t.expense.category}
@@ -94,17 +106,20 @@ export function ExpenseForm({
                         selectedKey={selectedCategory ? String(selectedCategory) : null}
                         onSelectionChange={(key) => setSelectedCategory(key)}
                       />
-                      <ExpenseNameInput
-                        label={t.expense.name}
-                        placeholder={t.expense.namePh}
-                        value={note}
-                        onChange={setNote}
-                        onSelectSuggestion={handleSuggestionSelect}
-                        suggestions={suggestions}
-                        categories={categories}
-                        name="note"
-                        isRequired
-                      />
+                      {/* 3. Monto y Fecha */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <AmountInput
+                          label={t.expense.amount}
+                          placeholder="25.000"
+                          currency={currency}
+                          value={amount}
+                          onChange={setAmount}
+                        />
+                        <TextField fullWidth isRequired name="date" type="date" defaultValue={today} variant="secondary">
+                          <Label>{t.expense.date}</Label>
+                          <Input />
+                        </TextField>
+                      </div>
                       {error && (
                         <p aria-live="polite" className="text-sm text-danger">
                           {error}

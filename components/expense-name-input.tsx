@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input, Label, TextField } from "@heroui/react";
 import { getExpenseNameSuggestionsAction } from "@/actions/expenses";
+import { CategoryIcon } from "@/components/category-icon";
 import { useLang } from "@/components/language";
+import { formatMoney } from "@/lib/currency";
 import type { Category, ExpenseSuggestion } from "@/lib/types";
 
 function norm(s: string): string {
@@ -48,6 +50,7 @@ export function ExpenseNameInput({
   onSelectSuggestion,
   suggestions: propSuggestions,
   categories = [],
+  currency = "COP",
   name = "note",
   isRequired = true,
   maxLength = 80,
@@ -60,12 +63,12 @@ export function ExpenseNameInput({
   onSelectSuggestion?: (sug: ExpenseSuggestion) => void;
   suggestions?: ExpenseSuggestion[];
   categories?: Category[];
+  currency?: string;
   name?: string;
   isRequired?: boolean;
   maxLength?: number;
 }) {
   const { lang, t } = useLang();
-  const datalistId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -73,6 +76,8 @@ export function ExpenseNameInput({
   const currentVal = isControlled ? propValue : internalValue;
 
   const [fetchedSuggestions, setFetchedSuggestions] = useState<ExpenseSuggestion[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Cargar sugerencias si no se proporcionaron vía props
   useEffect(() => {
@@ -102,7 +107,7 @@ export function ExpenseNameInput({
     return map;
   }, [categories]);
 
-  // Combinar sugerencias del usuario con las por defecto para que siempre haya buenas opciones
+  // Combinar sugerencias del usuario con las por defecto
   const allSuggestions = useMemo(() => {
     const defaults = lang === "en" ? DEFAULT_SUGGESTIONS_EN : DEFAULT_SUGGESTIONS_ES;
     const seen = new Set<string>();
@@ -134,29 +139,75 @@ export function ExpenseNameInput({
     return list;
   }, [rawSuggestions, lang, categories]);
 
-  // Chips visibles: si el usuario escribe, filtra por coincidencia; si no, muestra las más frecuentes
-  const visibleChips = useMemo(() => {
-    const q = norm(currentVal.trim());
-    if (!q) {
-      return allSuggestions.slice(0, 8);
+  // Se activa el select de sugerencias SOLO cuando lleve al menos 3 letras escritas
+  const trimmed = currentVal.trim();
+  const hasThreeChars = trimmed.length >= 3;
+
+  const filtered = useMemo(() => {
+    if (!hasThreeChars) return [];
+    const q = norm(trimmed);
+    return allSuggestions.filter((s) => norm(s.name).includes(q)).slice(0, 8);
+  }, [allSuggestions, trimmed, hasThreeChars]);
+
+  const showDropdown = isOpen && hasThreeChars && filtered.length > 0;
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
     }
-    const matches = allSuggestions.filter((s) => norm(s.name).includes(q));
-    return matches.slice(0, 8);
-  }, [allSuggestions, currentVal]);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
 
   function handleInputChange(nextVal: string) {
     if (!isControlled) setInternalValue(nextVal);
     propOnChange?.(nextVal);
+    setIsOpen(true);
+    setHighlightedIndex(-1);
   }
 
   function handleSelect(item: ExpenseSuggestion) {
     if (!isControlled) setInternalValue(item.name);
     propOnChange?.(item.name);
     onSelectSuggestion?.(item);
+    setIsOpen(false);
+    setHighlightedIndex(-1);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!showDropdown) {
+      if (e.key === "ArrowDown" && hasThreeChars && filtered.length > 0) {
+        setIsOpen(true);
+        setHighlightedIndex(0);
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev + 1) % filtered.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev <= 0 ? filtered.length - 1 : prev - 1));
+    } else if (e.key === "Enter" && highlightedIndex >= 0 && highlightedIndex < filtered.length) {
+      e.preventDefault();
+      handleSelect(filtered[highlightedIndex]);
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+    }
   }
 
   return (
-    <div ref={containerRef} className="flex flex-col gap-1.5 w-full">
+    <div ref={containerRef} className="relative w-full">
       <TextField
         fullWidth
         isRequired={isRequired}
@@ -167,57 +218,75 @@ export function ExpenseNameInput({
       >
         <Label>{label}</Label>
         <Input
-          list={datalistId}
           maxLength={maxLength}
           placeholder={placeholder}
           autoComplete="off"
+          onFocus={() => {
+            if (hasThreeChars && filtered.length > 0) setIsOpen(true);
+          }}
+          onKeyDown={handleKeyDown}
         />
       </TextField>
 
-      {visibleChips.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="text-[11px] font-semibold text-muted uppercase tracking-wider shrink-0 mr-0.5 select-none">
-            {t.expense.suggestions}:
-          </span>
-          {visibleChips.map((item, idx) => {
-            const cat = item.categoryId ? categoryMap.get(item.categoryId) : undefined;
-            const isSelected = norm(currentVal.trim()) === norm(item.name.trim());
-            return (
-              <button
-                key={`${item.name}-${idx}`}
-                type="button"
-                onClick={() => handleSelect(item)}
-                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all cursor-pointer ${
-                  isSelected
-                    ? "border-accent bg-accent text-accent-foreground font-semibold shadow-xs"
-                    : "border-border/70 bg-default/50 hover:bg-default active:scale-95 text-foreground"
-                }`}
-              >
-                <span>{item.name}</span>
-                {cat && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[11px] ${
-                      isSelected ? "text-accent-foreground/80" : "text-muted"
-                    }`}
-                  >
+      {showDropdown && (
+        <div
+          role="listbox"
+          aria-label={t.expense.suggestions}
+          className="absolute left-0 right-0 top-full mt-1.5 z-30 max-h-52 overflow-y-auto rounded-xl border border-border bg-content1/95 p-1 shadow-2xl backdrop-blur-md [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            {t.expense.suggestions}
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {filtered.map((item, idx) => {
+              const cat = item.categoryId ? categoryMap.get(item.categoryId) : undefined;
+              const isHighlighted = idx === highlightedIndex;
+              return (
+                <div
+                  key={`${item.name}-${idx}`}
+                  role="option"
+                  aria-selected={isHighlighted}
+                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors ${
+                    isHighlighted
+                      ? "bg-default text-foreground"
+                      : "hover:bg-default/70 text-foreground"
+                  }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(item);
+                  }}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
-                      style={{ background: cat.color }}
-                    />
-                    <span>{cat.name}</span>
-                  </span>
-                )}
-              </button>
-            );
-          })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                      style={{
+                        background: (cat?.color ?? "#64748B") + "25",
+                        color: cat?.color ?? "#64748B",
+                      }}
+                      title={cat?.name ?? t.list.uncategorized}
+                    >
+                      <CategoryIcon icon={cat?.icon ?? "other"} size={15} />
+                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-medium truncate">{item.name}</span>
+                      {cat && (
+                        <span className="text-[11px] text-muted truncate">{cat.name}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {item.amount !== undefined && item.amount > 0 && (
+                    <span className="shrink-0 text-xs font-semibold tabular-nums text-muted">
+                      {formatMoney(item.amount, currency, lang)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
-
-      <datalist id={datalistId}>
-        {allSuggestions.map((s, idx) => (
-          <option key={`${s.name}-${idx}`} value={s.name} />
-        ))}
-      </datalist>
     </div>
   );
 }

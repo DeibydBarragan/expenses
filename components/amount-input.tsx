@@ -17,20 +17,33 @@ export function AmountInput({
   placeholder,
   currency,
   defaultValue,
+  value: propValue,
+  onChange: propOnChange,
 }: {
   label: string;
   placeholder: string;
   currency: string;
-  /** Para edición: monto precargado (number o numeric string de la BD). */
+  /** Para edición o autocompletado: monto precargado (number o numeric string de la BD). */
   defaultValue?: number | string;
+  value?: number | string;
+  onChange?: (raw: string) => void;
 }) {
   const { lang } = useLang();
   const zero = currencyMeta(currency).zeroDecimals;
+  const initial = propValue !== undefined ? propValue : defaultValue;
   const [display, setDisplay] = useState(() => {
-    const raw = toRawAmount(defaultValue, zero);
+    const raw = toRawAmount(initial, zero);
     return raw === "" ? "" : formatAmountInput(raw, currency, lang);
   });
-  const [raw, setRaw] = useState(() => toRawAmount(defaultValue, zero));
+  const [raw, setRaw] = useState(() => toRawAmount(initial, zero));
+
+  const [prevProp, setPrevProp] = useState(propValue);
+  if (propValue !== prevProp) {
+    setPrevProp(propValue);
+    const nextRaw = toRawAmount(propValue, zero);
+    setRaw(nextRaw);
+    setDisplay(nextRaw === "" ? "" : formatAmountInput(nextRaw, currency, lang));
+  }
 
   function handleChange(value: string) {
     const cleaned = value.replace(/[^0-9.,]/g, "");
@@ -38,6 +51,7 @@ export function AmountInput({
       const digits = cleaned.replace(/[.,]/g, "").slice(0, 12);
       setRaw(digits);
       setDisplay(formatAmountInput(digits, currency, lang));
+      propOnChange?.(digits);
       return;
     }
     const parts = cleaned.split(/[.,]/);
@@ -51,6 +65,7 @@ export function AmountInput({
     const next = dec !== undefined ? `${int}.${dec}` : int;
     setRaw(next);
     setDisplay(formatAmountInput(next, currency, lang));
+    propOnChange?.(next);
   }
 
   return (

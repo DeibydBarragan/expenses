@@ -130,7 +130,7 @@ export async function getExpenseSuggestions(): Promise<ExpenseSuggestion[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("expenses")
-    .select("note, category_id")
+    .select("note, category_id, amount, created_at")
     .not("note", "is", null)
     .order("created_at", { ascending: false })
     .limit(300);
@@ -139,19 +139,39 @@ export async function getExpenseSuggestions(): Promise<ExpenseSuggestion[]> {
     return [];
   }
 
-  const map = new Map<string, { name: string; categoryId: string | null; count: number }>();
-  for (const row of data as { note: string | null; category_id: string | null }[]) {
+  const map = new Map<
+    string,
+    { name: string; categoryId: string | null; amount?: number; count: number }
+  >();
+  for (const row of data as {
+    note: string | null;
+    category_id: string | null;
+    amount: number | string;
+    created_at: string;
+  }[]) {
     const raw = (row.note ?? "").trim();
     if (!raw) continue;
     const key = raw.toLowerCase();
+    const parsedAmount = Number(row.amount);
+    const validAmount =
+      Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : undefined;
+
     const existing = map.get(key);
     if (existing) {
       existing.count += 1;
       if (!existing.categoryId && row.category_id) {
         existing.categoryId = row.category_id;
       }
+      if (existing.amount === undefined && validAmount) {
+        existing.amount = validAmount;
+      }
     } else {
-      map.set(key, { name: raw, categoryId: row.category_id, count: 1 });
+      map.set(key, {
+        name: raw,
+        categoryId: row.category_id,
+        amount: validAmount,
+        count: 1,
+      });
     }
   }
 

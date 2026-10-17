@@ -3,7 +3,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Input, Label, TextField } from "@heroui/react";
 import { getExpenseNameSuggestionsAction } from "@/actions/expenses";
-import { CategoryIcon } from "@/components/category-icon";
 import { useLang } from "@/components/language";
 import type { Category, ExpenseSuggestion } from "@/lib/types";
 
@@ -66,7 +65,7 @@ export function ExpenseNameInput({
   maxLength?: number;
 }) {
   const { lang, t } = useLang();
-  const listboxId = useId();
+  const datalistId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [internalValue, setInternalValue] = useState(defaultValue);
@@ -74,8 +73,6 @@ export function ExpenseNameInput({
   const currentVal = isControlled ? propValue : internalValue;
 
   const [fetchedSuggestions, setFetchedSuggestions] = useState<ExpenseSuggestion[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Cargar sugerencias si no se proporcionaron vía props
   useEffect(() => {
@@ -123,7 +120,6 @@ export function ExpenseNameInput({
       const k = norm(d.name);
       if (!seen.has(k)) {
         seen.add(k);
-        // Intentar emparejar sugerencia por defecto con alguna categoría existente
         let matchedCatId: string | undefined;
         for (const c of categories) {
           if (norm(c.name).includes(k) || k.includes(norm(c.name))) {
@@ -138,73 +134,29 @@ export function ExpenseNameInput({
     return list;
   }, [rawSuggestions, lang, categories]);
 
-  // Filtrado reactivo al texto escrito
-  const filtered = useMemo(() => {
+  // Chips visibles: si el usuario escribe, filtra por coincidencia; si no, muestra las más frecuentes
+  const visibleChips = useMemo(() => {
     const q = norm(currentVal.trim());
     if (!q) {
-      return allSuggestions.slice(0, 7);
+      return allSuggestions.slice(0, 8);
     }
     const matches = allSuggestions.filter((s) => norm(s.name).includes(q));
     return matches.slice(0, 8);
   }, [allSuggestions, currentVal]);
 
-  // Cerrar al hacer clic fuera
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent | TouchEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, []);
-
   function handleInputChange(nextVal: string) {
     if (!isControlled) setInternalValue(nextVal);
     propOnChange?.(nextVal);
-    setIsOpen(true);
-    setHighlightedIndex(-1);
   }
 
   function handleSelect(item: ExpenseSuggestion) {
     if (!isControlled) setInternalValue(item.name);
     propOnChange?.(item.name);
     onSelectSuggestion?.(item);
-    setIsOpen(false);
-    setHighlightedIndex(-1);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (!isOpen || filtered.length === 0) {
-      if (e.key === "ArrowDown") {
-        setIsOpen(true);
-        setHighlightedIndex(0);
-        e.preventDefault();
-      }
-      return;
-    }
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlightedIndex((prev) => (prev + 1) % filtered.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightedIndex((prev) => (prev <= 0 ? filtered.length - 1 : prev - 1));
-    } else if (e.key === "Enter" && highlightedIndex >= 0 && highlightedIndex < filtered.length) {
-      e.preventDefault();
-      handleSelect(filtered[highlightedIndex]);
-    } else if (e.key === "Escape") {
-      setIsOpen(false);
-      setHighlightedIndex(-1);
-    }
   }
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="flex flex-col gap-1.5 w-full">
       <TextField
         fullWidth
         isRequired={isRequired}
@@ -215,65 +167,57 @@ export function ExpenseNameInput({
       >
         <Label>{label}</Label>
         <Input
+          list={datalistId}
           maxLength={maxLength}
           placeholder={placeholder}
           autoComplete="off"
-          onFocus={() => {
-            if (filtered.length > 0) setIsOpen(true);
-          }}
-          onKeyDown={handleKeyDown}
-          aria-autocomplete="list"
-          aria-controls={isOpen && filtered.length > 0 ? listboxId : undefined}
-          aria-expanded={isOpen && filtered.length > 0}
         />
       </TextField>
 
-      {isOpen && filtered.length > 0 && (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-label={t.expense.suggestions}
-          className="absolute left-0 right-0 top-full mt-1.5 z-50 max-h-56 overflow-y-auto rounded-xl border border-border bg-content1 p-1 shadow-xl backdrop-blur-md [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <div className="px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-muted">
-            {t.expense.suggestions}
-          </div>
-          <div className="flex flex-col gap-0.5">
-            {filtered.map((item, idx) => {
-              const cat = item.categoryId ? categoryMap.get(item.categoryId) : undefined;
-              const isHighlighted = idx === highlightedIndex;
-              return (
-                <div
-                  key={`${item.name}-${idx}`}
-                  role="option"
-                  aria-selected={isHighlighted}
-                  className={`flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                    isHighlighted ? "bg-default text-foreground" : "hover:bg-default/70 text-foreground"
-                  }`}
-                  onMouseDown={(e) => {
-                    // Prevenir pérdida de foco antes de seleccionar
-                    e.preventDefault();
-                    handleSelect(item);
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(idx)}
-                >
-                  <span className="font-medium truncate">{item.name}</span>
-                  {cat && (
-                    <span className="ml-2 flex shrink-0 items-center gap-1.5 rounded-full bg-default/80 px-2 py-0.5 text-xs text-muted">
-                      <span
-                        className="inline-block h-2 w-2 rounded-full shrink-0"
-                        style={{ background: cat.color }}
-                      />
-                      <CategoryIcon icon={cat.icon} size={12} />
-                      <span className="truncate max-w-[90px]">{cat.name}</span>
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+      {visibleChips.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="text-[11px] font-semibold text-muted uppercase tracking-wider shrink-0 mr-0.5 select-none">
+            {t.expense.suggestions}:
+          </span>
+          {visibleChips.map((item, idx) => {
+            const cat = item.categoryId ? categoryMap.get(item.categoryId) : undefined;
+            const isSelected = norm(currentVal.trim()) === norm(item.name.trim());
+            return (
+              <button
+                key={`${item.name}-${idx}`}
+                type="button"
+                onClick={() => handleSelect(item)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-accent bg-accent text-accent-foreground font-semibold shadow-xs"
+                    : "border-border/70 bg-default/50 hover:bg-default active:scale-95 text-foreground"
+                }`}
+              >
+                <span>{item.name}</span>
+                {cat && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] ${
+                      isSelected ? "text-accent-foreground/80" : "text-muted"
+                    }`}
+                  >
+                    <span
+                      className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+                      style={{ background: cat.color }}
+                    />
+                    <span>{cat.name}</span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
+
+      <datalist id={datalistId}>
+        {allSuggestions.map((s, idx) => (
+          <option key={`${s.name}-${idx}`} value={s.name} />
+        ))}
+      </datalist>
     </div>
   );
 }

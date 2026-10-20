@@ -289,16 +289,16 @@ export async function getCategoryMonthExpenses(
 }
 
 /** Actividad para la racha: días con gastos + marcas, con hora de creación. */
-export async function getStreakActivity(): Promise<{ date: string; createdAt: string }[]> {
+export async function getStreakActivity(): Promise<{ date: string; createdAt: string; type: "expense" | "mark" }[]> {
   const supabase = await createClient();
   const [exp, marks] = await Promise.all([
     supabase.from("expenses").select("date, created_at"),
     supabase.from("day_marks").select("date, created_at"),
   ]);
-  const out: { date: string; createdAt: string }[] = [];
-  for (const r of (exp.data ?? []) as { date: string; created_at: string }[])
-    out.push({ date: r.date, createdAt: r.created_at });
-  for (const r of (marks.data ?? []) as { date: string; created_at: string }[])
-    out.push({ date: r.date, createdAt: r.created_at });
+  const out: { date: string; createdAt: string; type: "expense" | "mark" }[] = [];
+  for (const r of (exp.data ?? []) as { date: string; created_at: string }[]) out.push({ date: r.date, createdAt: r.created_at, type: "expense" });
+
+  for (const r of (marks.data ?? []) as { date: string; created_at: string }[]) out.push({ date: r.date, createdAt: r.created_at, type: "mark" });
+
   return out;
 }

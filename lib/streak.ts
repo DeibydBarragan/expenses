@@ -9,6 +9,10 @@ export type Streak = {
   todayCovered: boolean;
   /** Último día cubierto (≤ hoy), o null si no hay. */
   lastCovered: string | null;
+  /** Días cubiertos con actividad o marca. */
+  coveredDays: string[];
+  /** Días pasados donde se usó un congelamiento para salvar la racha. */
+  frozenDays: string[];
 };
 
 function toISODate(d: Date): string {
@@ -21,7 +25,7 @@ function nextDayISO(iso: string): string {
   return toISODate(d);
 }
 
-function addDaysISO(iso: string, n: number): string {
+export function addDaysISO(iso: string, n: number): string {
   const d = new Date(iso + "T12:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);
   return toISODate(d);
@@ -61,7 +65,16 @@ export function computeStreak(
 
   const todayCovered = covered.has(todayISO);
   const lastCovered = [...covered].filter((d) => d <= todayISO).sort().pop() ?? null;
-  if (covered.size === 0) return { current: 0, best: 0, freeze: false, todayCovered: false, lastCovered: null };
+  if (covered.size === 0)
+    return {
+      current: 0,
+      best: 0,
+      freeze: false,
+      todayCovered: false,
+      lastCovered: null,
+      coveredDays: [],
+      frozenDays: [],
+    };
 
   const first = [...covered].sort()[0];
   const end = todayCovered ? todayISO : addDaysISO(todayISO, -1);
@@ -70,6 +83,7 @@ export function computeStreak(
   let best = 0;
   let freeze = false;
   let consec = 0;
+  const frozenDays: string[] = [];
 
   for (let d = first; d <= end; d = nextDayISO(d)) {
     if (covered.has(d)) {
@@ -82,11 +96,20 @@ export function computeStreak(
       consec = 0;
       if (streak > 0 && freeze) {
         freeze = false; // congelado: la racha se mantiene
+        frozenDays.push(d);
       } else if (streak > 0) {
         streak = 0; // 2º fallo (o sin congelamiento): reinicio
       }
     }
   }
 
-  return { current: streak, best, freeze, todayCovered, lastCovered };
+  return {
+    current: streak,
+    best,
+    freeze,
+    todayCovered,
+    lastCovered,
+    coveredDays: [...covered],
+    frozenDays,
+  };
 }

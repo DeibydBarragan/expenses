@@ -22,10 +22,12 @@ export function ExpenseForm({
   categories,
   currency,
   suggestions,
+  defaultDate,
 }: {
   categories: Category[];
   currency: string;
   suggestions?: ExpenseSuggestion[];
+  defaultDate?: string;
 }) {
   const { t } = useLang();
   const [error, setError] = useState<string>();
@@ -115,7 +117,7 @@ export function ExpenseForm({
                           value={amount}
                           onChange={setAmount}
                         />
-                        <TextField fullWidth isRequired name="date" type="date" defaultValue={today} variant="secondary">
+                        <TextField fullWidth isRequired name="date" type="date" defaultValue={defaultDate ?? today} variant="secondary">
                           <Label>{t.expense.date}</Label>
                           <Input />
                         </TextField>

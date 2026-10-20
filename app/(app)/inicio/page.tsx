@@ -2,39 +2,79 @@ import { redirect } from "next/navigation";
 import { Card } from "@heroui/react";
 import { FadeIn } from "@/components/animated";
 import { CategoryChart } from "@/components/category-chart";
+import { DayPager } from "@/components/day-pager";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { StreakCard } from "@/components/streak-card";
-import { formatMoney } from "@/lib/currency";
-import { getCategories, getExpenseSuggestions, getMonthExpenses, getProfile, getRecentExpenses, getSession, getStreakActivity } from "@/lib/queries";
-import { computeStreak } from "@/lib/streak";
+import { formatDateISO, formatMoney } from "@/lib/currency";
+import {
+  getCategories,
+  getExpenseSuggestions,
+  getMonthExpenses,
+  getProfile,
+  getRecentExpenses,
+  getSession,
+  getStreakActivity,
+} from "@/lib/queries";
+import { addDaysISO, computeStreak } from "@/lib/streak";
 import { getTimeZone, todayISOInTZ } from "@/lib/time";
 import { getDictionary } from "@/lib/i18n/server";
 
-export default async function InicioPage() {
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+export default async function InicioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ d?: string }>;
+}) {
   const { user } = await getSession();
   if (!user) redirect("/login");
 
   const { lang, t } = await getDictionary();
   const profile = await getProfile(user.id);
   const currency = profile?.currency ?? "COP";
-  const now = new Date();
-  const [monthExpenses, recent, categories, activity, suggestions] = await Promise.all([
-    getMonthExpenses(now.getFullYear(), now.getMonth() + 1),
-    getRecentExpenses(5),
-    getCategories(),
-    getStreakActivity(),
-    getExpenseSuggestions(),
-  ]);
+
   const todayStr = todayISOInTZ(await getTimeZone());
+  const sp = await searchParams;
+  const rawD = sp.d;
+  const selectedDate = rawD && DATE_RE.test(rawD) && rawD <= todayStr ? rawD : todayStr;
+  const isToday = selectedDate === todayStr;
+  const isYesterday = selectedDate === addDaysISO(todayStr, -1);
+
+  const now = new Date();
+  const nowYear = now.getFullYear();
+  const nowMonth = now.getMonth() + 1;
+  const [selYear, selMonth] = selectedDate.split("-").map(Number);
+  const isSameMonth = selYear === nowYear && selMonth === nowMonth;
+
+  const [monthExpenses, selectedMonthExpenses, recent, categories, activity, suggestions] =
+    await Promise.all([
+      getMonthExpenses(nowYear, nowMonth),
+      isSameMonth ? Promise.resolve([]) : getMonthExpenses(selYear, selMonth),
+      getRecentExpenses(5),
+      getCategories(),
+      getStreakActivity(),
+      getExpenseSuggestions(),
+    ]);
+
   const streak = computeStreak(activity, todayStr, profile?.streak_reset_at ?? null);
+  const markedDates = new Set(activity.filter((a) => a.type === "mark").map((a) => a.date));
+  const expenseDates = new Set(activity.filter((a) => a.type === "expense").map((a) => a.date));
 
+  const isDateCovered = streak.coveredDays.includes(selectedDate);
+  let coveredReason: "expense" | "mark" | null = null;
+  if (expenseDates.has(selectedDate)) coveredReason = "expense";
+  else if (markedDates.has(selectedDate)) coveredReason = "mark";
+
+  const targetExpenses = isSameMonth ? monthExpenses : selectedMonthExpenses;
+  const selectedDayExpenses = targetExpenses.filter((e) => e.date === selectedDate);
+  const totalSelectedDay = selectedDayExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const totalMes = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const totalHoy = monthExpenses
-    .filter((e) => e.date === todayStr)
-    .reduce((s, e) => s + Number(e.amount), 0);
 
-  const byCat = new Map<string, { id: string | null; name: string; color: string; icon: string; total: number; n: number }>();
+  const byCat = new Map<
+    string,
+    { id: string | null; name: string; color: string; icon: string; total: number; n: number }
+  >();
   for (const e of monthExpenses) {
     const id = e.category_id;
     const key = id ?? "__uncategorized";
@@ -51,16 +91,26 @@ export default async function InicioPage() {
     byCat.set(key, prev);
   }
   const top = [...byCat.values()].sort((a, b) => b.total - a.total).slice(0, 3);
-  const monthName = now.toLocaleDateString(lang === "en" ? "en" : "es", { month: "long" });
+
+  const dayCardLabel = isToday
+    ? t.home.today
+    : isYesterday
+    ? t.dayPager.yesterday
+    : formatDateISO(selectedDate, lang);
 
   return (
     <>
-      <section>
+      <section className="flex flex-col gap-2">
         <p className="text-sm text-muted">
           {t.home.hello}
           {profile?.name ? `, ${profile.name}` : ""} 👋
         </p>
-        <h1 className="text-balance text-2xl font-semibold capitalize tracking-tight">{monthName}</h1>
+        <DayPager
+          selectedDate={selectedDate}
+          todayStr={todayStr}
+          lang={lang}
+          t={t}
+        />
       </section>
 
       <FadeIn>
@@ -75,20 +125,33 @@ export default async function InicioPage() {
           </Card>
           <Card>
             <Card.Content className="p-4">
-              <p className="text-xs text-muted">{t.home.today}</p>
+              <p className="text-xs text-muted truncate">{dayCardLabel}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums">
-                {formatMoney(totalHoy, currency, lang)}
+                {formatMoney(totalSelectedDay, currency, lang)}
               </p>
             </Card.Content>
           </Card>
         </section>
       </FadeIn>
 
-      <ExpenseForm categories={categories} currency={currency} suggestions={suggestions} />
+      <ExpenseForm
+        categories={categories}
+        currency={currency}
+        suggestions={suggestions}
+        defaultDate={selectedDate}
+      />
 
       {profile?.show_streak !== false && (
         <FadeIn delay={0.05}>
-          <StreakCard streak={streak} t={t} lang={lang} />
+          <StreakCard
+            streak={streak}
+            t={t}
+            lang={lang}
+            selectedDate={selectedDate}
+            todayDate={todayStr}
+            isCovered={isDateCovered}
+            coveredReason={coveredReason}
+          />
         </FadeIn>
       )}
 
@@ -102,6 +165,26 @@ export default async function InicioPage() {
         defaultView="bar"
         storageKey="expenses-chart-inicio"
       />
+
+      {!isToday && (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-muted">
+            {t.dayPager.dayExpenses(selectedDayExpenses.length)}
+          </h2>
+          {selectedDayExpenses.length > 0 ? (
+            <ExpenseList
+              expenses={selectedDayExpenses}
+              categories={categories}
+              currency={currency}
+              lang={lang}
+              t={t}
+              suggestions={suggestions}
+            />
+          ) : (
+            <p className="text-xs text-muted py-2">{t.dayPager.noExpensesThisDay}</p>
+          )}
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-muted">{t.home.recent}</h2>

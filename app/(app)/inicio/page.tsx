@@ -108,8 +108,6 @@ export default async function InicioPage({
         <DayPager
           selectedDate={selectedDate}
           todayStr={todayStr}
-          lang={lang}
-          t={t}
         />
       </section>
 

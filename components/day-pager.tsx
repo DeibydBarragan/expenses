@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLang } from "@/components/language";
 import { addDaysISO } from "@/lib/streak";
-import type { Dictionary, Lang } from "@/lib/i18n/dictionaries";
 
 const pagerBtnClass =
   "flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -14,15 +14,13 @@ const disabledBtnClass =
 export function DayPager({
   selectedDate,
   todayStr,
-  lang,
-  t,
 }: {
   selectedDate: string;
   todayStr: string;
-  lang: Lang;
-  t: Dictionary;
 }) {
   const router = useRouter();
+  const { lang, t } = useLang();
+
   const isToday = selectedDate === todayStr;
   const yesterdayStr = addDaysISO(todayStr, -1);
   const isYesterday = selectedDate === yesterdayStr;

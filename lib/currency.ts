@@ -66,3 +66,32 @@ export function formatMonthYear(year: number, month: number, lang: Lang) {
     year: "numeric",
   });
 }
+
+/**
+ * Clases tipográficas responsivas para cifras monetarias en tarjetas de métricas,
+ * evitando desbordamientos en móvil y truncamientos innecesarios (...) en desktop.
+ */
+export function getMetricAmountSize(formatted: string, context: "half" | "stat" = "half"): string {
+  const len = formatted.length;
+  if (context === "half") {
+    // Tarjetas en grid de 2 columnas en móvil (Inicio: este mes / día)
+    if (len >= 13) return "text-sm sm:text-lg";
+    if (len >= 10) return "text-base sm:text-xl";
+    return "text-xl sm:text-xl";
+  }
+  // context === "stat" (Informes: promedio diario)
+  if (len >= 13) return "text-sm sm:text-base";
+  if (len >= 10) return "text-base sm:text-base";
+  return "text-lg sm:text-lg";
+}
+
+/**
+ * Clases tipográficas responsivas para la tarjeta de Total en Informes,
+ * que en desktop comparte fila con Nº gastos y Promedio diario.
+ */
+export function getReportTotalSize(formatted: string): string {
+  const len = formatted.length;
+  if (len >= 14) return "text-lg sm:text-base";
+  if (len >= 12) return "text-xl sm:text-base";
+  return "text-xl sm:text-lg";
+}

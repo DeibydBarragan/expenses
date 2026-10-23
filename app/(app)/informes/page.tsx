@@ -3,7 +3,7 @@ import { Card } from "@heroui/react";
 import { FadeIn } from "@/components/animated";
 import { CategoryChart } from "@/components/category-chart";
 import { MonthPager } from "@/components/month-pager";
-import { formatMonthYear, formatMoney } from "@/lib/currency";
+import { formatMonthYear, formatMoney, getMetricAmountSize, getReportTotalSize } from "@/lib/currency";
 import { getCategories, getMonthExpenses, getProfile, getSession } from "@/lib/queries";
 import { getDictionary } from "@/lib/i18n/server";
 
@@ -48,6 +48,8 @@ export default async function InformesPage({
     prev.n += 1;
     byCat.set(key, prev);
   }
+  const totalFormatted = formatMoney(total, currency, lang);
+  const dayAvgFormatted = formatMoney(dayAvg, currency, lang);
   const rows = [...byCat.values()].sort((a, b) => b.total - a.total);
 
   const prev = month === 1 ? { y: year - 1, m: 12 } : { y: year, m: month - 1 };
@@ -74,32 +76,42 @@ export default async function InformesPage({
       </FadeIn>
 
       <FadeIn delay={0.05}>
-        <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card className="col-span-2 sm:col-span-1">
-          <Card.Content className="p-4">
-            <p className="text-xs text-muted truncate">{t.reports.total}</p>
-            <p className="mt-1 text-xl sm:text-lg font-semibold tabular-nums truncate">{formatMoney(total, currency, lang)}</p>
-          </Card.Content>
-        </Card>
-        <Card className="col-span-1">
-          <Card.Content className="p-4">
-            <p className="text-xs text-muted truncate">{t.reports.num}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums">{count}</p>
-          </Card.Content>
-        </Card>
-        <Card className="col-span-1">
-          <Card.Content className="p-4">
-            <p className="text-xs text-muted truncate">{t.reports.dayAvg}</p>
-            <p className="mt-1 text-lg font-semibold tabular-nums truncate">{formatMoney(dayAvg, currency, lang)}</p>
-          </Card.Content>
-        </Card>
-      </section>
+        <section className="grid grid-cols-2 sm:grid-cols-12 gap-3">
+          <Card className="col-span-2 sm:col-span-5">
+            <Card.Content className="p-3.5 sm:p-4">
+              <p className="text-xs text-muted truncate">{t.reports.total}</p>
+              <p
+                className={`mt-1 font-semibold tabular-nums tracking-tight whitespace-nowrap ${getReportTotalSize(totalFormatted)}`}
+                title={totalFormatted}
+              >
+                {totalFormatted}
+              </p>
+            </Card.Content>
+          </Card>
+          <Card className="col-span-1 sm:col-span-3">
+            <Card.Content className="p-3.5 sm:p-4">
+              <p className="text-xs text-muted truncate">{t.reports.num}</p>
+              <p className="mt-1 text-lg sm:text-xl font-semibold tabular-nums tracking-tight">{count}</p>
+            </Card.Content>
+          </Card>
+          <Card className="col-span-1 sm:col-span-4">
+            <Card.Content className="p-3.5 sm:p-4">
+              <p className="text-xs text-muted truncate">{t.reports.dayAvg}</p>
+              <p
+                className={`mt-1 font-semibold tabular-nums tracking-tight whitespace-nowrap ${getMetricAmountSize(dayAvgFormatted, "stat")}`}
+                title={dayAvgFormatted}
+              >
+                {dayAvgFormatted}
+              </p>
+            </Card.Content>
+          </Card>
+        </section>
       </FadeIn>
 
       <FadeIn delay={0.1}>
         <CategoryChart
           title={t.reports.byCat}
-          totalText={formatMoney(total, currency, lang)}
+          totalText={totalFormatted}
           rows={rows}
           total={total}
           currency={currency}

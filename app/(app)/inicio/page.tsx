@@ -6,7 +6,7 @@ import { DayPager } from "@/components/day-pager";
 import { ExpenseForm } from "@/components/expense-form";
 import { ExpenseList } from "@/components/expense-list";
 import { StreakCard } from "@/components/streak-card";
-import { formatDateISO, formatMoney } from "@/lib/currency";
+import { formatDateISO, formatMoney, getMetricAmountSize } from "@/lib/currency";
 import {
   getCategories,
   getExpenseSuggestions,
@@ -70,6 +70,8 @@ export default async function InicioPage({
   const selectedDayExpenses = targetExpenses.filter((e) => e.date === selectedDate);
   const totalSelectedDay = selectedDayExpenses.reduce((s, e) => s + Number(e.amount), 0);
   const totalMes = monthExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const totalMesFormatted = formatMoney(totalMes, currency, lang);
+  const totalSelectedDayFormatted = formatMoney(totalSelectedDay, currency, lang);
 
   const byCat = new Map<
     string,
@@ -114,18 +116,24 @@ export default async function InicioPage({
       <FadeIn>
         <section className="grid grid-cols-2 gap-3">
           <Card>
-            <Card.Content className="p-4">
-              <p className="text-xs text-muted">{t.home.thisMonth}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums">
-                {formatMoney(totalMes, currency, lang)}
+            <Card.Content className="p-3.5 sm:p-4">
+              <p className="text-xs text-muted truncate">{t.home.thisMonth}</p>
+              <p
+                className={`mt-1 font-semibold tabular-nums tracking-tight whitespace-nowrap ${getMetricAmountSize(totalMesFormatted, "half")}`}
+                title={totalMesFormatted}
+              >
+                {totalMesFormatted}
               </p>
             </Card.Content>
           </Card>
           <Card>
-            <Card.Content className="p-4">
+            <Card.Content className="p-3.5 sm:p-4">
               <p className="text-xs text-muted truncate">{dayCardLabel}</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums">
-                {formatMoney(totalSelectedDay, currency, lang)}
+              <p
+                className={`mt-1 font-semibold tabular-nums tracking-tight whitespace-nowrap ${getMetricAmountSize(totalSelectedDayFormatted, "half")}`}
+                title={totalSelectedDayFormatted}
+              >
+                {totalSelectedDayFormatted}
               </p>
             </Card.Content>
           </Card>
